@@ -11,8 +11,8 @@
     <juno-repo.url>http://download.eclipse.org/releases/juno</juno-repo.url>
     <tycho-repo.url>https://oss.sonatype.org/content/groups/public/</tycho-repo.url>
     <repo_name>elexis.3.base</repo_name>
-    <repo_variant>snapshot</repo_variant>
-    <useBranch>master</useBranch>
+    <repo_variant>prerelease</repo_variant>
+    <useBranch>ungrad</useBranch>
     <nonElexisP2variant>snapshot</nonElexisP2variant>
     <ROOT>${project.basedir}/compositeRepository</ROOT>
   </properties>
@@ -67,7 +67,7 @@
 	</profiles>
 <modules>
   <!-- our test modules. Come first to make them run as soon as possible -->
-  <module>at.medevit.atc_codes.test</module>
+  <!-- module>at.medevit.atc_codes.test</module>
   <module>at.medevit.elexis.ehc.core.test</module>
   <module>at.medevit.elexis.impfplan.test</module>
   <module>at.medevit.elexis.loinc_test</module>
@@ -82,7 +82,7 @@
   <module>net.medshare.connector.viollier_test</module>
   <module>org.iatrix.bestellung.rose_test</module>
   <module>ch.pharmed.phmprescriber_test</module>
-  <module>at.medevit.ch.artikelstamm.medcalendar.test</module>
+  <module>at.medevit.ch.artikelstamm.medcalendar.test</module -->
   <module>ch.gpb.elexis.cst</module>
   <module>ch.gpb.elexis.cst.feature</module>
   <module>at.gruber.elexis.mythic22</module>
@@ -155,6 +155,8 @@
   <module>ch.elexis.laborimport_lg1.feature</module>
   <module>ch.elexis.laborimport.synlab</module>
   <module>ch.elexis.laborimport.synlab.feature</module>
+  <module>ch.elexis.laborimport_risch</module>
+  <module>ch.elexis.laborimport_risch.feature</module>
   <module>ch.elexis.laborimport_rischbern</module>
   <module>ch.elexis.laborimport_rischbern.feature</module>
   <module>ch.elexis.laborimport_rothen</module>
