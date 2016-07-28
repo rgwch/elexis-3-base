@@ -80,9 +80,9 @@ public class OpenOfficeProcessor implements IProcessor {
 			}
 			Process process = Runtime.getRuntime().exec(cmd + " " + param);
 			if (process.isAlive()) {
-				return false;
-			} else {
 				return true;
+			} else {
+				return false;
 			}
 		} catch (Exception e) {
 			ExHandler.handle(e);
