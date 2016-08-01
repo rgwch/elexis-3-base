@@ -39,9 +39,6 @@
    <feature url="features/ch.elexis.privatrechnung.feature.source_3.0.0.qualifier.jar" id="ch.elexis.privatrechnung.feature.source" version="3.0.0.qualifier">
       <category name="sources"/>
    </feature>
-   <feature url="features/ch.elexis.privatrechnung.feature_3.0.0.qualifier.jar" id="ch.elexis.privatrechnung.feature" version="3.0.0.qualifier">
-      <category name="documentmanagement"/>
-   </feature>
    <feature url="features/ch.medelexis.text.templator.feature.source_3.0.0.qualifier.jar" id="ch.medelexis.text.templator.feature.source" version="3.0.0.qualifier">
       <category name="sources"/>
    </feature>
@@ -273,9 +270,6 @@
    <feature url="features/com.hilotec.elexis.toolbar.feature_3.0.0.qualifier.jar" id="com.hilotec.elexis.toolbar.feature" version="3.0.0.qualifier">
       <category name="sources"/>
    </feature>
-   <feature url="features/com.jsigle.noatext_jsl.feature.source_3.0.0.qualifier.jar" id="com.jsigle.noatext_jsl.feature.source" version="3.0.0.qualifier">
-      <category name="documentmanagement"/>
-   </feature>
    <feature url="features/com.jsigle.noatext_jsl.feature_3.0.0.qualifier.jar" id="com.jsigle.noatext_jsl.feature" version="3.0.0.qualifier">
       <category name="sources"/>
    </feature>
@@ -401,6 +395,9 @@
    </feature>
    <feature url="features/ch.gpb.elexis.cst.feature_1.0.0.qualifier.jar" id="ch.gpb.elexis.cst.feature" version="1.0.0.qualifier">
       <category name="clinicrecordkeeping"/>
+   </feature>
+   <feature url="features/ch.elexis.privatrechnung.feature_3.0.0.qualifier.jar" id="ch.elexis.privatrechnung.feature" version="3.0.0.qualifier">
+      <category name="finances"/>
    </feature>
    <category-def name="basepackages" label="Basispakete"/>
    <category-def name="documentmanagement" label="Dokumentenverwaltung">
