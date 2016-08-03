@@ -78,12 +78,8 @@ public class OpenOfficeProcessor implements IProcessor {
 			if (i != -1) {
 				param = param.substring(0, i) + output.getAbsolutePath() + param.substring(i + 1);
 			}
-			Process process = Runtime.getRuntime().exec(cmd + " " + param);
-			if (process.isAlive()) {
-				return true;
-			} else {
-				return false;
-			}
+			/* Process process = */ Runtime.getRuntime().exec(cmd + " " + param);
+			return true;
 		} catch (Exception e) {
 			ExHandler.handle(e);
 			SWTHelper.alert("OpenOffice Processor",
