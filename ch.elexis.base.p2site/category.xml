@@ -399,6 +399,9 @@
    <feature url="features/ch.elexis.privatrechnung.feature_3.0.0.qualifier.jar" id="ch.elexis.privatrechnung.feature" version="3.0.0.qualifier">
       <category name="finances"/>
    </feature>
+   <feature url="features/ch.elexis.laborimport_risch.feature_1.0.0.qualifier.jar" id="ch.elexis.laborimport_risch.feature" version="1.0.0.qualifier">
+      <category name="laborexchanges"/>
+   </feature>
    <category-def name="basepackages" label="Basispakete"/>
    <category-def name="documentmanagement" label="Dokumentenverwaltung">
       <description>
