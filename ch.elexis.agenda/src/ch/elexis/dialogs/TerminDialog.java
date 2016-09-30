@@ -13,6 +13,7 @@
 package ch.elexis.dialogs;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Hashtable;
 
 import org.eclipse.jface.dialogs.Dialog;
@@ -293,6 +294,12 @@ public class TerminDialog extends TitleAreaDialog {
 						qbe.add("Tag", ">", new TimeTool().toString(TimeTool.DATE_COMPACT));
 					}
 					java.util.List<Termin> list = qbe.execute();
+					list.sort(new Comparator<Termin>() {
+						@Override
+						public int compare(Termin t1, Termin t2){
+							return t2.getStartTime().compareTo(t1.getStartTime());
+						}
+					});
 					lTermine.clear();
 					lTerminListe.removeAll();
 					if ((list != null) && (list.size() > 0)) {
@@ -351,14 +358,8 @@ public class TerminDialog extends TitleAreaDialog {
 					tName.setText(inp.getValue());
 					tNr.setText(""); //$NON-NLS-1$
 					actKontakt = null;
-					// actTermin=null;
-					actPlannable =
-						new Termin.Free(agenda.getActDate().toString(TimeTool.DATE_COMPACT), tiVon
-							.getTimeAsMinutes(), niDauer.getValue());
-					// TODO actPnannable und slider
 				}
 			}
-			
 		});
 		hlText.setForeground(UiDesk.getColor(UiDesk.COL_BLUE));
 		// new Label(cLinks,SWT.SEPARATOR|SWT.VERTICAL);
@@ -378,15 +379,8 @@ public class TerminDialog extends TitleAreaDialog {
 						tNr.setText(actKontakt.get(Kontakt.FLD_SHORT_LABEL));
 					}
 					setEnablement();
-					/*
-					 * if (actPlannable == null) { actPlannable = new Termin(agenda.getActDate()
-					 * .toString(TimeTool.DATE_COMPACT), tiVon .getTimeAsMinutes(),
-					 * niDauer.getValue()); }
-					 */
-					
 				}
 			}
-			
 		});
 		
 		new Label(cBottom, SWT.NONE).setText(Messages.TerminDialog_Mandator);

@@ -69,6 +69,7 @@ public class XMLExporterServices {
 	private static final String ATTR_EAN_PROVIDER = "provider_id"; //$NON-NLS-1$
 	private static final String ATTR_TREATMENT = "treatment"; //$NON-NLS-1$
 	private static final String ATTR_DATE_BEGIN = "date_begin"; //$NON-NLS-1$
+	private static final String ATTR_SESSION = "session"; //$NON-NLS-1$
 	
 	private static final String ELEMENT_RECORD_TARMED = "record_tarmed"; //$NON-NLS-1$
 	private static final String TL = "TL"; //$NON-NLS-1$
@@ -254,11 +255,20 @@ public class XMLExporterServices {
 		// begin end end
 		// dates that are stored in the bill
 		int recordNumber = 1;
-		
+		String lastKonsDatum = null;
+		int session = 1;
 		for (Konsultation konsultation : konsultationen) {
 			List<Verrechnet> leistungen = konsultation.getLeistungen();
+			// konsultationen list is ordered by date, so we can just compare with previous
+			String konsDatum = konsultation.getDatum();
+			if (konsDatum.equals(lastKonsDatum)) {
+				session++;
+			} else {
+				lastKonsDatum = konsDatum;
+				session = 1;
+			}
 			
-			TimeTool tt = new TimeTool(konsultation.getDatum());
+			TimeTool tt = new TimeTool(konsDatum);
 			String dateForTarmed = XMLExporterUtil.makeTarmedDatum(konsultation.getDatum());
 			
 			boolean bRFE = false; // RFE already encoded
@@ -313,6 +323,9 @@ public class XMLExporterServices {
 					el.setAttribute(XMLExporter.ATTR_TARIFF_TYPE, "001"); // 22060 //$NON-NLS-1$
 					Hashtable<String, String> ext = tl.loadExtension();
 					String bezug = ext.get("Bezug"); // 22360 //$NON-NLS-1$
+					if (StringTool.isNothing(bezug)) {
+						bezug = verrechnet.getDetail("Bezug");
+					}
 					if (!StringTool.isNothing(bezug)) {
 						el.setAttribute("ref_code", bezug); //$NON-NLS-1$
 					}
@@ -502,7 +515,14 @@ public class XMLExporterServices {
 				} else {
 					Money preis = verrechnet.getNettoPreis();
 					el = new Element(ELEMENT_RECORD_OTHER, XMLExporter.nsinvoice);
-					el.setAttribute(XMLExporter.ATTR_TARIFF_TYPE, v.getCodeSystemCode());
+					String codeSystemCode = v.getCodeSystemCode();
+					el.setAttribute(XMLExporter.ATTR_TARIFF_TYPE, codeSystemCode);
+					// all 406 will have code 2000
+					if ("406".equals(codeSystemCode)) {
+						el.setAttribute(XMLExporter.ATTR_CODE, "2000");
+						el.setAttribute("name",
+							verrechnet.getText() + " [" + verrechnet.getCode() + "]"); // 22340
+					}
 					el.setAttribute(ATTR_UNIT, XMLTool.moneyToXmlDouble(preis));
 					el.setAttribute(ATTR_UNIT_FACTOR, "1.0"); //$NON-NLS-1$
 					Money mAmountLocal = new Money(preis);
@@ -521,10 +541,13 @@ public class XMLExporterServices {
 						
 					ret.mUebrige.addMoney(mAmountLocal);
 				}
+				el.setAttribute(ATTR_SESSION, Integer.toString(session));
 				el.setAttribute(ATTR_RECORD_ID, Integer.toString(recordNumber++)); // 22010
 				el.setAttribute(XMLExporter.ATTR_QUANTITY, Double.toString(zahl)); // 22350
 				el.setAttribute(ATTR_DATE_BEGIN, dateForTarmed); // 22370
-				el.setAttribute("name", verrechnet.getText()); // 22340
+				if (el.getAttribute("name") == null) {
+					el.setAttribute("name", verrechnet.getText()); // 22340
+				}
 				// 22330 set code if still empty
 				if (el.getAttribute(XMLExporter.ATTR_CODE) == null) {
 					XMLExporterUtil.setAttributeWithDefault(el, XMLExporter.ATTR_CODE, v.getCode(),
