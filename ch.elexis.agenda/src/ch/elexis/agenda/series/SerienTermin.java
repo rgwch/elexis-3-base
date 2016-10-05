@@ -115,9 +115,7 @@ public class SerienTermin {
 		if (contact == null)
 			setFreeText(rootTermin.get(Termin.FLD_PATIENT));
 		reason = rootTermin.getGrund();
-		System.out.println("got " + rootTermin.get(Termin.FLD_EXTENSION));
 		parseSerienTerminConfigurationString(rootTermin.get(Termin.FLD_EXTENSION));
-		System.out.println("initialized " + toString());
 	}
 	
 	/**
@@ -186,13 +184,7 @@ public class SerienTermin {
 	 * @param askForConfirmation
 	 */
 	public void delete(boolean askForConfirmation){
-		// due to weirdness of original code, the following sequence of steps has to be undertaken
-		// 1. delete all subsequent dates
 		rootTermin.delete(askForConfirmation);
-		// 2. remove link group info from root date
-		rootTermin.delete(askForConfirmation);
-		// 3. delete the rootTermin itself
-		rootTermin.delete(true);
 	}
 	
 	private void createSubSequentDates(){
@@ -289,7 +281,6 @@ public class SerienTermin {
 		TimeSpan ts = new TimeSpan(dateIncrementer, endTime);
 		Termin t = new Termin(Activator.getDefault().getActResource(), ts, "series");
 		t.set(Termin.FLD_LINKGROUP, groupId);
-		t.setFlag(Termin.SW_LINKED);
 		
 		System.out.println("writing subsequent date entry " + endTime.dump());
 	}
@@ -318,7 +309,6 @@ public class SerienTermin {
 		}
 		
 		rootTermin.setGrund(reason);
-		rootTermin.setFlag(Termin.SW_LINKED);
 		rootTermin.set("ErstelltVon", CoreHub.actUser.getLabel());
 		rootTermin.set(Termin.FLD_EXTENSION, this.toString());
 		
