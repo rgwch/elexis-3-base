@@ -8,11 +8,11 @@ package ch.elexis.laborimport.sftp;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.InputDialog;
 
+import com.jcraft.jsch.UserInfo;
+
 import ch.elexis.core.data.activator.CoreHub;
 import ch.elexis.core.ui.UiDesk;
 import ch.elexis.core.ui.util.SWTHelper;
-
-import com.jcraft.jsch.UserInfo;
 
 public class JschUserInfo implements UserInfo {
 	
@@ -35,17 +35,7 @@ public class JschUserInfo implements UserInfo {
 	}
 	
 	public boolean promptPassword(String message){
-		if (false) {
-			InputDialog input =
-				new InputDialog(UiDesk.getTopShell(), "Passworteingabe", message, "", null);
-			if (input.open() == Dialog.OK) {
-				CoreHub.localCfg.set(Preferences.SFTP_PWD, input.getValue());
-				return true;
-			}
-			return false;
-		} else {
-			return true;
-		}
+		return true;
 	}
 	
 	public boolean promptYesNo(String message){
