@@ -224,9 +224,11 @@ public class DetailComposite extends Composite {
 		
 		adsc = new ArticleDefaultSignatureComposite(grpDefaultSignature, SWT.NONE);
 		adsc.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+		adsc.setOnLocationEnabled(false);
 		
 		m_bindingContext = initDataBindings();
 		adsc.initDataBindings(m_bindingContext);
+		adsc.setAutoSave(true);
 	}
 
 	@Override
@@ -235,6 +237,9 @@ public class DetailComposite extends Composite {
 	}
 	
 	public void setItem(IArtikelstammItem obj){
+		if (isDisposed()) {
+			return;
+		}
 		item.setValue(obj);
 		
 		String atcCode = obj.getATCCode();
