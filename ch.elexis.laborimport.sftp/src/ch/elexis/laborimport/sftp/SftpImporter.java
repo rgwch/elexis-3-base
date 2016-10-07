@@ -50,7 +50,6 @@ public class SftpImporter extends ImporterPage {
 	Shell parentShell;
 	
 	public SftpImporter(){
-		System.out.println("hier");
 	}
 	
 	@Override
@@ -63,9 +62,9 @@ public class SftpImporter extends ImporterPage {
 	}
 	
 	/**
-	 * Connct to the sftp-ite and fetch all files provided there.
+	 * Connct to the sftp-site and fetch all files provided there.
 	 * 
-	 * @return
+	 * @return a ch.rgw.tools.Result object containing the Results
 	 */
 	private Result<?> importDirect(){
 		Result<?> result = new Result<String>("OK");
