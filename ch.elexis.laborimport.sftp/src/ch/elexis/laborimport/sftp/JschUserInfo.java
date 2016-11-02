@@ -14,16 +14,30 @@ import ch.elexis.core.data.activator.CoreHub;
 import ch.elexis.core.ui.UiDesk;
 import ch.elexis.core.ui.util.SWTHelper;
 
+/**
+ * Override UserInfo to supply our info from Configuration
+ * @author gerry
+ *
+ */
 public class JschUserInfo implements UserInfo {
 	
+	/**
+	 * Get the passphrase
+	 */
 	public String getPassphrase(){
 		return CoreHub.localCfg.get(Preferences.SFTP_PWD, null);
 	}
 	
+	/**
+	 * Get the Password - Same as passphrase here
+	 */
 	public String getPassword(){
 		return CoreHub.localCfg.get(Preferences.SFTP_PWD, null);
 	}
 	
+	/**
+	 * Prompt for a passphrase and store it
+	 */
 	public boolean promptPassphrase(String message){
 		InputDialog input =
 			new InputDialog(UiDesk.getTopShell(), "Passworteingabe", message, "", null);
@@ -34,16 +48,29 @@ public class JschUserInfo implements UserInfo {
 		return false;
 	}
 	
+	
+	/**
+	 * Prompt for a Password - same as passphrase
+	 * @param message prompt for the message box
+	 */
 	public boolean promptPassword(String message){
-		return true;
+		return promptPassphrase(message);
 	}
 	
+	/**
+	 * Ask the user something 
+	 * @param message: prompt of the message box
+	 */
 	public boolean promptYesNo(String message){
-		return SWTHelper.askYesNo("Laborimport Badena", message);
+		return SWTHelper.askYesNo("Laborimport "+CoreHub.localCfg.get(Preferences.SFTP_LABNAME, "unknown"), message);
 	}
 	
+	/**
+	 * Show a message
+	 * @param message prompt for the message box
+	 */
 	public void showMessage(String message){
-		SWTHelper.showInfo("Laborimport Badena", message);
+		SWTHelper.showInfo("Laborimport "+CoreHub.localCfg.get(Preferences.SFTP_LABNAME, "unknown"), message);
 		
 	}
 	
