@@ -67,7 +67,7 @@
 	</profiles>
 <modules>
   <!-- our test modules. Come first to make them run as soon as possible -->
-  <!-- module>at.medevit.atc_codes.test</module>
+  <module>at.medevit.atc_codes.test</module>
   <module>at.medevit.elexis.ehc.core.test</module>
   <module>at.medevit.elexis.gdt</module>
   <module>at.medevit.elexis.gdt.defaultfilecp</module>
@@ -86,7 +86,7 @@
   <module>net.medshare.connector.viollier_test</module>
   <module>org.iatrix.bestellung.rose_test</module>
   <module>ch.pharmed.phmprescriber_test</module>
-  <module>at.medevit.ch.artikelstamm.medcalendar.test</module -->
+  <module>at.medevit.ch.artikelstamm.medcalendar.test</module>
   <module>ch.gpb.elexis.cst</module>
   <module>ch.gpb.elexis.cst.feature</module>
   <module>at.gruber.elexis.mythic22</module>
