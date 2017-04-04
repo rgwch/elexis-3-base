@@ -384,7 +384,9 @@ public class XMLExporter implements IRnOutputter {
 		
 		//esr9
 		esr9 = XMLExporterEsr9.buildEsr9(rechnung, xmlBalance, this);
-		body.addContent(esr9.getElement());
+		if(esr9!=null){
+			body.addContent(esr9.getElement());
+		}
 
 		//tiers garant or payant
 		XMLExporterTiers xmlTiers = XMLExporterTiers.buildTiers(rechnung, this);
