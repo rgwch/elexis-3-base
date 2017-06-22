@@ -12,6 +12,5 @@
 	<classpathentry exported="true" kind="lib" path="lib/serializer-2.7.0.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/xalan-2.7.0.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/barcode4j-fop-ext-complete.jar"/>
-	<classpathentry kind="src" path="src/"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

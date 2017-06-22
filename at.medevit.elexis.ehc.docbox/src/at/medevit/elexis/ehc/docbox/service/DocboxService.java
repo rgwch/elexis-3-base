@@ -65,7 +65,6 @@ import org.openhealthtools.mdht.uml.hl7.vocab.x_DocumentActMood;
 import org.openhealthtools.mdht.uml.hl7.vocab.x_DocumentSubstanceMood;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import at.medevit.elexis.ehc.core.EhcCoreMapper;
 import ch.elexis.data.Mandant;
 import ch.elexis.data.Person;
