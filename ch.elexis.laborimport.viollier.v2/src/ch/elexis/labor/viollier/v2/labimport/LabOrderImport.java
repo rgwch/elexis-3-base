@@ -412,30 +412,28 @@ public class LabOrderImport extends ImporterPage {
 			// PDF in Omnivore aufnehmen, falls vorhanden
 			// 3: Transaktionsnummer (entpricht MSH-10) --> Prüfen
 			final String crit1 = observation.getMessageControlID();
-			// 6: Auftragssnummer (entpricht ORC-3.1) --> Prüfen
-			final String crit2 = observation.getOrderNumberFiller();
-			// 8: Nachname Patient (entpricht PID-5.1) --> Prüfen
-			final String crit3 = observation.getPatientLastName().toLowerCase();
 			// 9: Geburtsdatum Patient (entpricht PID.7) --> Prüfen
 			final String crit4 = observation.getPatientBirthdate();
 			
 			File[] pdfFiles = downloadDir.listFiles(new FilenameFilter() {
 				@Override
 				public boolean accept(File dir, String name){
-					boolean retVal = false;
+					boolean crit1found = false;
+					boolean crit4found = false;
 					if (name.toLowerCase().endsWith(".pdf")) { //$NON-NLS-1$
 						String items[] = name.toLowerCase().split("[_]"); //$NON-NLS-1$
-						int offset = 0;
-						if (items.length == 11)
-							offset = 1;
-						if (items.length >= 10) {
-							retVal =
-								(items[offset + 1].equals(crit1) && items[offset + 4].equals(crit2)
-									&& items[offset + 6].equals(crit3) && items[offset + 7]
-									.equals(crit4));
+						if (items.length > 2) {
+							// look for the criteria in all found items
+							for (int i = 0; i < items.length; i++) {
+								if (items[i].equalsIgnoreCase(crit1)) {
+									crit1found = true;
+								} else if (items[i].equalsIgnoreCase(crit4)) {
+									crit4found = true;
+								}
+							}
 						}
 					}
-					return retVal;
+					return crit1found && crit4found;
 				}
 			});
 			if (pdfFiles.length > 0) {

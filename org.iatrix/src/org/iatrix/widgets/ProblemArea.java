@@ -15,9 +15,6 @@
  ******************************************************************************/
 package org.iatrix.widgets;
 
-import static ch.elexis.core.data.events.ElexisEvent.EVENT_DESELECTED;
-import static ch.elexis.core.data.events.ElexisEvent.EVENT_UPDATE;
-
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -45,6 +42,7 @@ import org.iatrix.data.Problem;
 import org.iatrix.util.Constants;
 import org.iatrix.util.Heartbeat;
 import org.iatrix.util.Heartbeat.IatrixHeartListener;
+import org.iatrix.util.Helpers;
 import org.iatrix.views.JournalView;
 import org.iatrix.views.ProblemView;
 import org.slf4j.Logger;
@@ -52,14 +50,12 @@ import org.slf4j.LoggerFactory;
 
 import ch.elexis.admin.AccessControlDefaults;
 import ch.elexis.core.data.activator.CoreHub;
-import ch.elexis.core.data.events.ElexisEvent;
 import ch.elexis.core.data.events.ElexisEventDispatcher;
 import ch.elexis.core.data.interfaces.IDiagnose;
 import ch.elexis.core.ui.UiDesk;
 import ch.elexis.core.ui.actions.CodeSelectorHandler;
 import ch.elexis.core.ui.actions.ICodeSelectorTarget;
 import ch.elexis.core.ui.dialogs.MediDetailDialog;
-import ch.elexis.core.ui.events.ElexisUiEventListenerImpl;
 import ch.elexis.core.ui.util.SWTHelper;
 import ch.elexis.core.ui.util.ViewMenus;
 import ch.elexis.core.ui.views.codesystems.DiagnosenView;
@@ -92,6 +88,7 @@ public class ProblemArea implements IJournalArea {
 	public Action deleteFixmedikationAction;
 	public Action editFixmedikationAction;
 	private FormToolkit tk;
+	private Patient actPat = null;
 
 	public ProblemArea(Composite topArea, String partName, IViewSite viewSite){
 		tk = UiDesk.getToolkit();
@@ -495,7 +492,7 @@ public class ProblemArea implements IJournalArea {
 		addProblemAction = new Action("Neues Problem") {
 			{
 				setImageDescriptor(AbstractUIPlugin.imageDescriptorFromPlugin("org.iatrix",
-					"rsc/new_problem.ico"));
+					"icons/new_problem.ico"));
 				setToolTipText("Neues Problem für diesen Patienten erstellen");
 			}
 
@@ -620,21 +617,6 @@ public class ProblemArea implements IJournalArea {
 		return deleteFixmedikationAction;
 	}
 
-	private final ElexisUiEventListenerImpl eeli_problem =
-		new ElexisUiEventListenerImpl(Episode.class, EVENT_UPDATE | EVENT_DESELECTED) {
-
-			@Override
-			public void runInUi(ElexisEvent ev){
-				switch (ev.getType()) {
-				case EVENT_UPDATE:
-					break;
-				case EVENT_DESELECTED:
-					problemsKTable.clearSelection();
-					break;
-				}
-
-			}
-		};
 	private Konsultation actKons;
 	private boolean heartbeatProblemEnabled;
 
@@ -680,7 +662,7 @@ public class ProblemArea implements IJournalArea {
 					}
 
 					// reload data
-					setPatient(actKons.getFall().getPatient());
+					reloadAndRefresh();
 
 					// restore selection
 
@@ -708,23 +690,22 @@ public class ProblemArea implements IJournalArea {
 	}
 
 	/*
-	 * Aktuellen Patienten setzen
+	 * Aktuelle Konsultation und Patienten setzen
 	 */
 	@Override
 	public void setKons(Konsultation newKons, KonsActions op){
-		if (op == KonsActions.ACTIVATE_KONS) {
-			if (actKons != newKons) {
-				log.trace("setKons " + (newKons == null ? "null" : newKons.getId()));
-				actKons = newKons;
-			}
+		if (Helpers.twoKonsEqual(actKons, newKons))
+		{
+			return;
 		}
-	}
-
-	@Override
-	public void setPatient(Patient newPatient){
-		// problemsKTable.
-		problemsTableModel.setPatient(newPatient);
-		reloadAndRefresh();
+		actKons = newKons;
+		actPat = null;
+		logEvent("setKons");
+		if (newKons != null) {
+			Patient newPatient = newKons.getFall().getPatient();
+				problemsTableModel.setPatient(newPatient);
+				reloadAndRefresh();
+		}
 	}
 
 	public MyKTable getProblemKTable(){

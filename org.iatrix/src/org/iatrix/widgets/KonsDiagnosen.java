@@ -23,6 +23,7 @@ import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.forms.widgets.FormToolkit;
+import org.iatrix.util.Helpers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,7 +58,7 @@ public class KonsDiagnosen implements IJournalArea {
 		if (konsultation != null) {
 			List<IDiagnose> diagnosen = konsultation.getDiagnosen();
 			if (diagnosen != null && diagnosen.size() > 0) {
-				List<String> dxList = new ArrayList<String>();
+				List<String> dxList = new ArrayList<>();
 				for (IDiagnose diagnose : diagnosen) {
 					dxList.add(diagnose.getLabel());
 				}
@@ -84,9 +85,9 @@ public class KonsDiagnosen implements IJournalArea {
 	}
 	private void logEvent(String msg){
 		StringBuilder sb = new StringBuilder(msg + ": ");
-		sb.append(lDiagnosis.getText());
+		sb.append(lDiagnosis.getText()+ " ");
 		if (actKons == null) {
-			sb.append("actKons null");
+			sb.append("actKons null ");
 		} else {
 			sb.append(actKons.getId());
 			Patient pat = actKons.getFall().getPatient();
@@ -97,19 +98,11 @@ public class KonsDiagnosen implements IJournalArea {
 	}
 
 	@Override
-	public void setPatient(Patient newPatient){
-		// nothing todo. We need a consultation
-	}
-
-	@Override
 	public void setKons(Konsultation newKons, KonsActions op){
-		boolean konsChanged = actKons != null &&
-				newKons != null && actKons.getId() != newKons.getId();
-		if ((actKons == null && newKons != null) ||
-			(newKons == null && actKons != null))
-		{
-			konsChanged = true;
-		}
+		boolean konsChanged = !Helpers.twoKonsSamePatient(actKons,  newKons);
+		logEvent("setKons " + (newKons != null ? newKons.getId() +
+				" vom " + newKons.getDatum() : "null") +
+				" konsChanged: " + konsChanged);
 		if (op == KonsActions.ACTIVATE_KONS || konsChanged) {
 			updateKonsultation(true);
 		}
