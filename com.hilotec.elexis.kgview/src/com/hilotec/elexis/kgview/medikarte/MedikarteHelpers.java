@@ -83,7 +83,7 @@ public class MedikarteHelpers {
 	{
 		// TODO: Koennte man mit einer Query sauberer loesen
 		List<Prescription> medis = medikarteMedikation(patient, false);
-		TimeTool max = new TimeTool(0);
+		TimeTool max = new TimeTool();
 		TimeTool cur = new TimeTool();
 		for (Prescription p: medis) {
 			cur.set(p.getBeginDate());
