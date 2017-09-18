@@ -119,6 +119,11 @@ public class XML44Printer {
 		ret.amountUnclassified = xmlServices.getOtherMoney();
 		
 		ret.due = new Money(balance.getAmountDue());
+		// Subtract reminder if present, will be added by EZPrinter
+		double dReminder = balance.getAmountReminder();
+		if (dReminder > 0) {
+			ret.due.subtractMoney(new Money(dReminder));
+		}
 		ret.paid = new Money(balance.getAmountPrepaid());
 		
 		GarantType eTiers = body.getTiersGarant();
@@ -534,9 +539,9 @@ public class XML44Printer {
 		}
 		
 		if (rec.isObligation()) {
-			sb.append("0\t"); //$NON-NLS-1$
-		} else {
 			sb.append("1\t"); //$NON-NLS-1$
+		} else {
+			sb.append("0\t"); //$NON-NLS-1$
 		}
 		
 		double amount = rec.getAmount();
@@ -599,9 +604,9 @@ public class XML44Printer {
 		}
 		
 		if (tarmed.isObligation()) {
-			sb.append("0\t"); //$NON-NLS-1$
-		} else {
 			sb.append("1\t"); //$NON-NLS-1$
+		} else {
+			sb.append("0\t"); //$NON-NLS-1$
 		}
 		
 		double amount = tarmed.getAmount();
@@ -641,7 +646,13 @@ public class XML44Printer {
 		cursor = XMLPrinterUtil.print(cursor, tp, 7, SWT.LEFT, false, secondLine); //$NON-NLS-1$
 		cursor = XMLPrinterUtil.print(cursor, tp, 7, SWT.LEFT, true, "Währung:\t\t"); //$NON-NLS-1$
 		cursor = XMLPrinterUtil.print(cursor, tp, 7, SWT.LEFT, false, "CHF\t"); //$NON-NLS-1$
-		cursor = XMLPrinterUtil.print(cursor, tp, 7, SWT.LEFT, false, "\t\t\t\t\t"); //$NON-NLS-1$
+		if (balance.getAmountReminder() > 0) {
+			cursor = XMLPrinterUtil.print(cursor, tp, 7, SWT.LEFT, true, "Mahngebühr:\t"); //$NON-NLS-1$
+			cursor = XMLPrinterUtil.print(cursor, tp, 7, SWT.LEFT, false,
+				df.format(balance.getAmountReminder()) + "\t\t\t"); //$NON-NLS-1$
+		} else {
+			cursor = XMLPrinterUtil.print(cursor, tp, 7, SWT.LEFT, false, "\t\t\t\t\t"); //$NON-NLS-1$
+		}
 		cursor = XMLPrinterUtil.print(cursor, tp, 7, SWT.RIGHT, true, "davon PFL:\t"); //$NON-NLS-1$
 		cursor =
 			XMLPrinterUtil.print(cursor, tp, 7, SWT.RIGHT, false,

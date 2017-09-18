@@ -8,11 +8,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.util.Optional;
 
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -25,7 +25,7 @@ public class TarmedOptifierTest {
 	private static Patient patGrissemann, patStermann;
 	private static Konsultation konsGriss, konsSter;
 	private static TarmedLeistung tlBaseFirst5Min, tlBaseXRay, tlBaseRadiologyHospital,
-			tlUltrasound, tlTapingCat1, tlSkullSono, tlBaseTech;
+			tlUltrasound, tlTapingCat1;
 			
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception{
@@ -39,9 +39,6 @@ public class TarmedOptifierTest {
 		tlBaseRadiologyHospital = (TarmedLeistung) TarmedLeistung.getFromCode("39.0015");
 		tlUltrasound = (TarmedLeistung) TarmedLeistung.getFromCode("39.3005");
 		tlTapingCat1 = (TarmedLeistung) TarmedLeistung.getFromCode("01.0110");
-		tlSkullSono = (TarmedLeistung) TarmedLeistung.getFromCode("39.3200");
-		tlBaseTech = (TarmedLeistung) TarmedLeistung.getFromCode("39.3800");
-		
 		
 		//Patient Grissemann with case and consultation
 		patGrissemann = new Patient("Grissemann", "Christoph", "17.05.1966", Patient.MALE);
@@ -73,6 +70,9 @@ public class TarmedOptifierTest {
 			(Status) importer.performImport(new NullProgressMonitor(), tarmedInStream, null);
 		assertEquals(IStatus.OK, retStatus.getCode());
 	}
+	
+	private TarmedLeistung additionalService;
+	private TarmedLeistung mainService;
 	
 	@Test
 	public void testAddCompatibleAndIncompatible(){
@@ -121,26 +121,59 @@ public class TarmedOptifierTest {
 		
 		resCompatible = optifier.isCompatible(tlBaseFirst5Min, tlBaseRadiologyHospital);
 		assertTrue(resCompatible.isOK());
-		
-		resCompatible = optifier.isCompatible(tlSkullSono, tlBaseTech);
-		assertTrue(resCompatible.isOK());
 	}
 	
 	@Test
-	public void testUltraAutoBaseTech()
-	{
-		int sizeInit = konsSter.getLeistungen().size();
-		konsSter.addLeistung(tlSkullSono);
-		Assert.assertEquals(sizeInit + 2, konsSter.getLeistungen().size());
-		boolean found = false;
-		for (Verrechnet verrechnet : konsSter.getLeistungen())
-		{
-			if (verrechnet.getVerrechenbar().getCode().equals(tlBaseTech.getCode()))
-			{
-				found = true;
-				break;
+	public void testSetBezug(){
+		additionalService = (TarmedLeistung) TarmedLeistung.getFromCode("39.5010");
+		mainService = (TarmedLeistung) TarmedLeistung.getFromCode("39.5060");
+		// additional without main, not allowed
+		Result<IVerrechenbar> resultSter = optifier.add(additionalService, konsSter);
+		assertFalse(resultSter.isOK());
+		// additional after main, allowed
+		resultSter = optifier.add(mainService, konsSter);
+		assertTrue(resultSter.isOK());
+		assertTrue(getVerrechent(konsSter, mainService).isPresent());
+		
+		resultSter = optifier.add(additionalService, konsSter);
+		assertTrue(resultSter.isOK());
+		assertTrue(getVerrechent(konsSter, additionalService).isPresent());
+		
+		// another additional, not allowed
+		resultSter = optifier.add(additionalService, konsSter);
+		assertFalse(resultSter.isOK());
+		assertTrue(getVerrechent(konsSter, additionalService).isPresent());
+		
+		// remove, and add again
+		Optional<Verrechnet> verrechnet = getVerrechent(konsSter, additionalService);
+		assertTrue(verrechnet.isPresent());
+		Result<Verrechnet> result = optifier.remove(verrechnet.get(), konsSter);
+		assertTrue(result.isOK());
+		resultSter = optifier.add(additionalService, konsSter);
+		assertTrue(resultSter.isOK());
+		// add another main and additional
+		resultSter = optifier.add(mainService, konsSter);
+		assertTrue(resultSter.isOK());
+		assertTrue(getVerrechent(konsSter, mainService).isPresent());
+		
+		resultSter = optifier.add(additionalService, konsSter);
+		assertTrue(resultSter.isOK());
+		assertTrue(getVerrechent(konsSter, additionalService).isPresent());
+		
+		// remove main service, should also remove additional service
+		verrechnet = getVerrechent(konsSter, mainService);
+		result = optifier.remove(verrechnet.get(), konsSter);
+		assertTrue(result.isOK());
+		assertFalse(getVerrechent(konsSter, mainService).isPresent());
+		assertFalse(getVerrechent(konsSter, additionalService).isPresent());
+	}
+	
+	private Optional<Verrechnet> getVerrechent(Konsultation kons, TarmedLeistung leistung){
+		for (Verrechnet verrechnet : kons.getLeistungen()) {
+			if (verrechnet.getCode().equals(leistung.getCode())) {
+				return Optional.of(verrechnet);
 			}
 		}
-		Assert.assertTrue(found);	
+		return Optional.empty();
 	}
 }

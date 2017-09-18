@@ -16,6 +16,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Hashtable;
@@ -57,6 +59,10 @@ public class TarmedLeistung extends UiVerrechenbarAdapter {
 	public static final String FLD_TEXT = "Text";
 	public static final String FLD_NICK = "Nick";
 	public static final String FLD_PARENT = "Parent";
+	
+	public static final String EXT_FLD_HIERARCHY_SLAVES = "HierarchySlaves";
+	public static final String EXT_FLD_SERVICE_GROUPS = "ServiceGroups";
+	public static final String EXT_FLD_SERVICE_BLOCKS = "ServiceBlocks";
 	
 	public static final String XIDDOMAIN = "www.xid.ch/id/tarmedsuisse";
 	
@@ -635,5 +641,98 @@ public class TarmedLeistung extends UiVerrechenbarAdapter {
 	@Override
 	public int getCacheTime(){
 		return DBConnection.CACHE_TIME_MAX;
+	}
+	
+	/**
+	 * Get the list of codes of the possible slave services allowed by tarmed.
+	 * 
+	 * @return
+	 */
+	public List<String> getHierarchy(TimeTool date){
+		List<String> ret = new ArrayList<>();
+		List<String> hierarchy = getExtStringListField(TarmedLeistung.EXT_FLD_HIERARCHY_SLAVES);
+		if (!hierarchy.isEmpty()) {
+			for (String string : hierarchy) {
+				int dateStart = string.indexOf('[');
+				String datesString = string.substring(dateStart + 1, string.length() - 1);
+				String codeString = string.substring(0, dateStart);
+				if (isDateWithinDatesString(date, datesString)) {
+					ret.add(codeString);
+				}
+			}
+		}
+		return ret;
+	}
+	
+	private boolean isDateWithinDatesString(TimeTool date, String datesString){
+		String[] parts = datesString.split("\\|");
+		if (parts.length == 2) {
+			LocalDate from = LocalDate.parse(parts[0]);
+			LocalDate to = LocalDate.parse(parts[1]);
+			LocalDate localDate = date.toLocalDate();
+			return (from.isBefore(localDate) || from.isEqual(localDate))
+				&& (to.isAfter(localDate) || to.isEqual(localDate));
+		}
+		return false;
+	}
+	
+	private List<String> getExtStringListField(String extKey){
+		List<String> ret = new ArrayList<>();
+		loadExtension();
+		String values = ext.get(extKey);
+		if (values != null && !values.isEmpty()) {
+			String[] parts = values.split(", ");
+			for (String string : parts) {
+				ret.add(string);
+			}
+		}
+		return ret;
+	}
+	
+	/**
+	 * Get the list of service groups this service is part of.
+	 * 
+	 * @return
+	 */
+	public List<String> getServiceGroups(TimeTool date){
+		List<String> ret = new ArrayList<>();
+		List<String> groups = getExtStringListField(TarmedLeistung.EXT_FLD_SERVICE_GROUPS);
+		if (!groups.isEmpty()) {
+			for (String string : groups) {
+				int dateStart = string.indexOf('[');
+				String datesString = string.substring(dateStart + 1, string.length() - 1);
+				String groupString = string.substring(0, dateStart);
+				if (isDateWithinDatesString(date, datesString)) {
+					ret.add(groupString);
+				}
+			}
+		}
+		return ret;
+	}
+	
+	/**
+	 * Get the list of service blocks this service is part of.
+	 * 
+	 * @return
+	 */
+	public List<String> getServiceBlocks(TimeTool date){
+		List<String> ret = new ArrayList<>();
+		List<String> blocks = getExtStringListField(TarmedLeistung.EXT_FLD_SERVICE_BLOCKS);
+		if (!blocks.isEmpty()) {
+			for (String string : blocks) {
+				int dateStart = string.indexOf('[');
+				String datesString = string.substring(dateStart + 1, string.length() - 1);
+				String blockString = string.substring(0, dateStart);
+				if (isDateWithinDatesString(date, datesString)) {
+					ret.add(blockString);
+				}
+			}
+		}
+		return ret;
+	}
+	
+	public String getServiceTyp(){
+		loadExtension();
+		return ext.get("LEISTUNG_TYP");
 	}
 }
