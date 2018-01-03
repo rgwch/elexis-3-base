@@ -14,6 +14,7 @@ package ch.medelexis.templator.model;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.text.MessageFormat;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -78,9 +79,14 @@ public class OpenOfficeProcessor implements IProcessor {
 			if (i != -1) {
 				param = param.substring(0, i) + output.getAbsolutePath() + param.substring(i + 1);
 			}
-			/* Process process = */Runtime.getRuntime().exec(new String[] {
-				cmd, param
-			});
+			String[] params_=param.split(" +");
+			String[] params=new String[params_.length+1];
+			params[0]=cmd;
+			for(i=0;i<params_.length;i++){
+				params[i+1]=params_[i];
+			}
+					
+			/* Process process = */ Runtime.getRuntime().exec(params);
 			return true;
 		} catch (Exception e) {
 			ExHandler.handle(e);
