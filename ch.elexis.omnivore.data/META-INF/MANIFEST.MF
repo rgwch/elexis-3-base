@@ -18,8 +18,25 @@ Import-Package: ch.elexis.omnivore,
  org.apache.commons.io;version="2.4.0",
  org.apache.commons.lang3;version="3.1.0",
  org.osgi.service.component.annotations;version="1.2.0"
-Export-Package: ch.elexis.omnivore.data,
- ch.elexis.omnivore.dialog
+Export-Package: ch.elexis.omnivore.data;
+  uses:="ch.elexis.core.ui.util,
+   ch.elexis.core.ui.exchange,
+   ch.elexis.core.ui.exchange.elements,
+   ch.elexis.core.data.services,
+   ch.elexis.core.ui.preferences,
+   org.eclipse.osgi.util,
+   org.eclipse.core.runtime,
+   ch.elexis.core.ui.text,
+   org.eclipse.swt.custom,
+   ch.elexis.data,
+   ch.rgw.tools,
+   ch.elexis.core.data.interfaces.text",
+ ch.elexis.omnivore.dialog;
+  uses:="ch.elexis.omnivore.data,
+   org.eclipse.osgi.util,
+   org.eclipse.swt.widgets,
+   com.tiff.common.ui.datepicker,
+   org.eclipse.jface.dialogs"
 Service-Component: OSGI-INF/ch.elexis.omnivore.data.service.internal.OmnivoreDocumentStore.xml,
  OSGI-INF/ch.elexis.omnivore.data.service.internal.LocalDocumentServiceHolder.xml
 Bundle-ActivationPolicy: lazy

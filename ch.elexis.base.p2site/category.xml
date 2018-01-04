@@ -231,6 +231,9 @@
    <feature url="features/ch.elexis.agenda.feature_3.2.100.qualifier.jar" id="ch.elexis.agenda.feature" version="3.2.100.qualifier">
       <category name="organisation"/>
    </feature>
+   <feature url="features/ch.elexis.laborimport_risch.feature_1.0.0.qualifier.jar" id="ch.elexis.laborimport_risch.feature" version="1.0.0.qualifier">
+      <category name="laborexchanges"/>
+   </feature>
    <category-def name="basepackages" label="Basispakete"/>
    <category-def name="documentmanagement" label="Dokumentenverwaltung">
       <description>
