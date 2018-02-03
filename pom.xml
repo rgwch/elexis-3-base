@@ -138,6 +138,8 @@
   <module>at.medevit.elexis.inbox.feature</module>
   <module>ch.elexis.laborimport_labtop</module>
   <module>ch.elexis.laborimport_labtop.feature</module>
+  <module>ch.elexis.laborimport.sftp</module>
+  <module>ch.elexis.laborimport.sftp.feature</module>
   <module>ch.elexis.laborimport_lg1</module>
   <module>ch.elexis.laborimport_lg1.feature</module>
   <module>ch.elexis.laborimport.synlab</module>
