@@ -30,6 +30,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
+import at.medevit.atc_codes.ATCCode;
+import at.medevit.atc_codes.ATCCodeService;
 import at.medevit.ch.artikelstamm.ARTIKELSTAMM;
 import at.medevit.ch.artikelstamm.ARTIKELSTAMM.ITEMS.ITEM;
 import at.medevit.ch.artikelstamm.ARTIKELSTAMM.LIMITATIONS.LIMITATION;
@@ -40,6 +42,7 @@ import at.medevit.ch.artikelstamm.BlackBoxReason;
 import at.medevit.ch.artikelstamm.DATASOURCEType;
 import at.medevit.ch.artikelstamm.SALECDType;
 import at.medevit.ch.artikelstamm.elexis.common.PluginConstants;
+import at.medevit.ch.artikelstamm.elexis.common.internal.ATCCodeServiceConsumer;
 import at.medevit.ch.artikelstamm.elexis.common.ui.provider.atccache.ATCCodeCache;
 import ch.artikelstamm.elexis.common.ArtikelstammItem;
 import ch.elexis.core.constants.StringConstants;
@@ -52,6 +55,7 @@ import ch.elexis.data.PersistentObject;
 import ch.elexis.data.Query;
 import ch.rgw.tools.JdbcLink;
 import ch.rgw.tools.JdbcLink.Stm;
+import ch.rgw.tools.StringTool;
 import ch.rgw.tools.TimeTool;
 
 public class ArtikelstammImporter {
@@ -60,6 +64,7 @@ public class ArtikelstammImporter {
 	private static Map<String, PRODUCT> products = new HashMap<String, PRODUCT>();
 	private static Map<String, LIMITATION> limitations = new HashMap<String, LIMITATION>();
 	private static volatile boolean userCanceled = false;
+	private static ATCCodeService atcService = ATCCodeServiceConsumer.getATCCodeService();
 	
 	/**
 	 * 
@@ -114,6 +119,9 @@ public class ArtikelstammImporter {
 				lock.unlock();
 				return Status.CANCEL_STATUS;
 			}
+			if (subMonitor.isCanceled()) {
+				return Status.CANCEL_STATUS;
+			}
 			subMonitor.worked(10);
 			
 			if (newVersion == null) {
@@ -143,19 +151,32 @@ public class ArtikelstammImporter {
 			
 			subMonitor.setTaskName("Lese Produkte und Limitationen...");
 			populateProducsAndLimitationsMap(importStamm);
+			if (subMonitor.isCanceled()) {
+				return Status.CANCEL_STATUS;
+			}
 			subMonitor.worked(5);
 			
 			subMonitor.setTaskName("Setze alle Elemente auf inaktiv...");
 			inactivateNonBlackboxedItems();
+			if (subMonitor.isCanceled()) {
+				return Status.CANCEL_STATUS;
+			}
 			subMonitor.worked(5);
 			
 			long startTime = System.currentTimeMillis();
 			subMonitor.setTaskName(
 				"Importiere Artikelstamm " + importStamm.getCREATIONDATETIME().getMonth() + "/"
 					+ importStamm.getCREATIONDATETIME().getYear());
+			if (updateOrAddItems(newVersion, importStamm,
+				subMonitor.split(50)) == Status.CANCEL_STATUS) {
+				return Status.CANCEL_STATUS;
+			}
+			;
 			
-			updateOrAddItems(newVersion, importStamm, subMonitor.split(50));
-			updateOrAddProducts(newVersion, importStamm, subMonitor.split(20));
+			if (updateOrAddProducts(newVersion, importStamm,
+				subMonitor.split(20)) == Status.CANCEL_STATUS) {
+				return Status.CANCEL_STATUS;
+			}
 			
 			// update the version number for type importStammType
 			subMonitor.setTaskName("Setze neue Versionsnummer");
@@ -202,7 +223,7 @@ public class ArtikelstammImporter {
 	 * @param importStamm
 	 * @param monitor
 	 */
-	private static void updateOrAddProducts(int newVersion, ARTIKELSTAMM importStamm,
+	private static IStatus updateOrAddProducts(int newVersion, ARTIKELSTAMM importStamm,
 		IProgressMonitor monitor){
 		SubMonitor subMonitor = SubMonitor.convert(monitor, 1);
 		
@@ -228,9 +249,12 @@ public class ArtikelstammImporter {
 			setValuesOnArtikelstammProdukt(foundProduct, product, newVersion);
 			
 			subMonitor.worked(1);
+			if (subMonitor.isCanceled()) {
+				return Status.CANCEL_STATUS;
+			}
 		}
 		subMonitor.done();
-		
+		return Status.OK_STATUS;
 	}
 	
 	private static String trimDSCR(String dscr, String itemId){
@@ -246,7 +270,14 @@ public class ArtikelstammImporter {
 		final int cummulatedVersion){
 		List<String> fields = new ArrayList<>();
 		List<String> values = new ArrayList<>();
-		
+		String atcCode = product.getATC();
+		if (!StringTool.isNothing(atcCode)) {
+			ATCCode atc = ArtikelstammImporter.atcService.getForATCCode(atcCode);
+			if (atc != null && !StringTool.isNothing(atc.name)) {
+				fields.add(ArtikelstammItem.FLD_SUBSTANCE);
+				values.add(atc != null ? atc.name : "");
+			}
+		}
 		fields.add(ArtikelstammItem.FLD_BLACKBOXED);
 		values.add(Integer.toString(BlackBoxReason.NOT_BLACKBOXED.getNumercialReason()));
 		
@@ -262,7 +293,7 @@ public class ArtikelstammImporter {
 		ai.set(fields.toArray(new String[0]), values.toArray(new String[0]));
 	}
 	
-	private static void updateOrAddItems(int newVersion, ARTIKELSTAMM importStamm,
+	private static IStatus updateOrAddItems(int newVersion, ARTIKELSTAMM importStamm,
 		IProgressMonitor monitor){
 		SubMonitor subMonitor = SubMonitor.convert(monitor, 1);
 		
@@ -311,8 +342,12 @@ public class ArtikelstammImporter {
 			setValuesOnArtikelstammItem(foundItem, item, newVersion, keepOverriddenPublicPrice);
 			
 			subMonitor.worked(1);
+			if (subMonitor.isCanceled()) {
+				return Status.CANCEL_STATUS;
+			}
 		}
 		subMonitor.done();
+		return Status.OK_STATUS;
 	}
 	
 	private static void setValuesOnArtikelstammItem(ArtikelstammItem ai, ITEM item,
@@ -387,10 +422,11 @@ public class ArtikelstammImporter {
 			fields.add(ArtikelstammItem.FLD_PPUB);
 			values.add((item.getPPUB() != null) ? item.getPPUB().toString() : null);
 		} else {
-			if(item.getPPUB()!=null) {
+			if (item.getPPUB() != null) {
 				ai.setExtInfoStoredObjectByKey(ArtikelstammItem.EXTINFO_VAL_PPUB_OVERRIDE_STORE,
 					item.getPPUB().toString());
-				log.info("[II] [{}] Updating ppub override store to [{}]", ai.getId(), item.getPPUB());
+				log.info("[II] [{}] Updating ppub override store to [{}]", ai.getId(),
+					item.getPPUB());
 			}
 		}
 		

@@ -55,7 +55,7 @@ public class ArtikelstammItem extends Artikel implements IArtikelstammItem {
 	
 	public static final String TABLENAME = "ARTIKELSTAMM_CH";
 	private static final String VERSION_ENTRY_ID = "VERSION";
-	static final String VERSION = "1.3.0";
+	static final String VERSION = "1.4.0";
 	
 	//@formatter:off
 	/** Eintrag zugeh. zu  */ public static final String FLD_CUMMULATED_VERSION = "CUMM_VERSION";
@@ -85,6 +85,7 @@ public class ArtikelstammItem extends Artikel implements IArtikelstammItem {
 	/** CAS Nr wenn Betäub */	public static final String FLD_NARCOTIC_CAS = "NARCOTIC_CAS";
 	/** Ist Impfstoff */		public static final String FLD_VACCINE = "VACCINE";
 	/** Produkt-Nummer */ 	  	public static final String FLD_PRODNO = "PRODNO";
+	/** Substance(s) */			public static final String FLD_SUBSTANCE="SUBSTANCE";
 	
 	public static final String EXTINFO_VAL_VAT_OVERRIDEN = "VAT_OVERRIDE";
 	public static final String EXTINFO_VAL_PPUB_OVERRIDE_STORE ="PPUB_OVERRIDE_STORE";
@@ -123,6 +124,7 @@ public class ArtikelstammItem extends Artikel implements IArtikelstammItem {
 			+ FLD_VACCINE + " CHAR(1),"
 			+ VERKAUFSEINHEIT + " VARCHAR(4),"  // Stück pro Abgabe
 			+ FLD_PRODNO+" VARCHAR(10),"
+			+ FLD_SUBSTANCE+" VARCHAR(255),"	// Substanz(en)
 			+ PersistentObject.FLD_EXTINFO + " BLOB"
 			+ "); "
 			+ "CREATE INDEX idxAiPHAR ON " + TABLENAME + " ("+FLD_PHAR+"); "
@@ -141,6 +143,8 @@ public class ArtikelstammItem extends Artikel implements IArtikelstammItem {
 	
 	static final String dbUpdateFrom12to13 =
 			"ALTER TABLE "+TABLENAME+" MODIFY "+FLD_DSCR+" VARCHAR(100);";
+	static final String dbUpdateFrom13To14 =
+					"ALTER TABLE "+TABLENAME+" ADD "+FLD_SUBSTANCE+" VARCHAR(255);";
 	
 	//@formatter:on
 	
@@ -157,7 +161,7 @@ public class ArtikelstammItem extends Artikel implements IArtikelstammItem {
 			Artikel.FLD_VK_PREIS + "=" + FLD_PPUB, FLD_PKG_SIZE, FLD_SL_ENTRY, FLD_IKSCAT,
 			FLD_LIMITATION, FLD_LIMITATION_PTS, FLD_LIMITATION_TEXT, FLD_GENERIC_TYPE,
 			FLD_HAS_GENERIC, FLD_LPPV, FLD_DEDUCTIBLE, FLD_NARCOTIC, FLD_NARCOTIC_CAS, FLD_VACCINE,
-			VERKAUFSEINHEIT, FLD_PRODNO, Artikel.LIEFERANT_ID, Artikel.MINBESTAND,
+			VERKAUFSEINHEIT, FLD_PRODNO, Artikel.LIEFERANT_ID, Artikel.MINBESTAND, FLD_SUBSTANCE,
 			Artikel.ISTBESTAND, Artikel.MAXBESTAND, PersistentObject.FLD_EXTINFO);
 		ArtikelstammItem version = load(VERSION_ENTRY_ID);
 		if (!version.exists()) {
@@ -175,6 +179,10 @@ public class ArtikelstammItem extends Artikel implements IArtikelstammItem {
 				}
 				if (vi.isOlder("1.3.0")) {
 					createOrModifyTable(dbUpdateFrom12to13);
+					version.set(FLD_GTIN, VERSION);
+				}
+				if (vi.isOlder("1.4.0")) {
+					createOrModifyTable(dbUpdateFrom13To14);
 					version.set(FLD_GTIN, VERSION);
 				}
 			}
@@ -354,7 +362,7 @@ public class ArtikelstammItem extends Artikel implements IArtikelstammItem {
 		}
 		return false;
 	}
-		
+	
 	/**
 	 * De-/activate the manual price override.
 	 * 
@@ -394,8 +402,8 @@ public class ArtikelstammItem extends Artikel implements IArtikelstammItem {
 	}
 	
 	/**
-	 * @return the overridden public price value if overridden and not null. If the price
-	 * was not overridden, also <code>null</code> is returned.
+	 * @return the overridden public price value if overridden and not null. If the price was not
+	 *         overridden, also <code>null</code> is returned.
 	 */
 	public Double getUserDefinedPriceValue(){
 		String ppub = get(FLD_PPUB);
@@ -805,7 +813,8 @@ public class ArtikelstammItem extends Artikel implements IArtikelstammItem {
 	/**
 	 * @param ean
 	 *            the European Article Number or GTIN
-	 * @return the ArtikelstammItem that fits the provided EAN/GTIN or <code>null</code> if none or multiple found
+	 * @return the ArtikelstammItem that fits the provided EAN/GTIN or <code>null</code> if none or
+	 *         multiple found
 	 */
 	public static @Nullable ArtikelstammItem findByEANorGTIN(@NonNull String ean){
 		Query<ArtikelstammItem> qre = new Query<ArtikelstammItem>(ArtikelstammItem.class);
@@ -839,7 +848,7 @@ public class ArtikelstammItem extends Artikel implements IArtikelstammItem {
 	public int getCacheTime(){
 		return DBConnection.CACHE_TIME_MAX;
 	}
-
+	
 	@Override
 	public String getProductId(){
 		if (isProduct()) {

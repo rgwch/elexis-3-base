@@ -14,6 +14,7 @@ import at.medevit.ch.artikelstamm.ui.ATCLabelProvider;
 import ch.artikelstamm.elexis.common.ArtikelstammItem;
 import ch.elexis.core.data.activator.CoreHub;
 import ch.elexis.core.data.interfaces.IVerrechenbar.VatInfo;
+import ch.rgw.tools.StringTool;
 
 public class ATCArtikelstammDecoratingLabelProvider extends DecoratingLabelProvider {
 	
@@ -43,12 +44,15 @@ public class ATCArtikelstammDecoratingLabelProvider extends DecoratingLabelProvi
 					ret = ret + " <" + ai.getPublicPrice() + "> ";
 				}
 			}
-			
+			String subst = ai.get(ArtikelstammItem.FLD_SUBSTANCE);
+			if (!StringTool.isNothing(subst)) {
+				ret = ret + " (" + subst + ")";
+			}
 			return ret;
 		} else if (element instanceof ATCCode) {
 			String atcLabel = atcLabelProvider.getText(element);
-			String atcLabelWAvailability =
-				atcLabel + " [" + determineNumberOfAvailableArticlesForAtcCode((ATCCode) element)+" Artikel]";
+			String atcLabelWAvailability = atcLabel + " ["
+				+ determineNumberOfAvailableArticlesForAtcCode((ATCCode) element) + " Artikel]";
 			return atcLabelWAvailability;
 		} else if (element instanceof ATCFilterInfoListElement) {
 			ATCFilterInfoListElement afile = (ATCFilterInfoListElement) element;
