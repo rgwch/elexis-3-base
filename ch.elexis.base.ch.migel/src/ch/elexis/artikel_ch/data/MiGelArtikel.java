@@ -27,7 +27,7 @@ public class MiGelArtikel extends Artikel {
 	
 	public MiGelArtikel(String code, String text, String unit, Money price){
 		create(MIGEL_NAME + code); //$NON-NLS-1$
-		String shortname = StringTool.getFirstLine(text, 120, "[\\n\\r]");
+		String shortname = StringTool.getFirstLine(text, 120);
 		Matcher matcher = pattern.matcher(shortname);
 		StringBuffer sb = new StringBuffer();
 		while (matcher.find()) {
