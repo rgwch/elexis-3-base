@@ -7,5 +7,6 @@ public class PreferenceConstants {
 	public static final String PREF_ATC_CODE_LANGUAGE = PREF_COMMON_BASE + "atcCodeLanguage";
 	public static final String PREF_SHOW_PRICE_IN_OVERVIEW = PREF_COMMON_BASE + "showPriceInOverview";
 	public static final String PREF_SHOW_ATC_GROUPS_WITHOUT_ARTICLES = PREF_COMMON_BASE+"showAtcGropsWoArticles";
+	public static final String PREFERRED_PROVIDER=PREF_COMMON_BASE+"preferredProvider";
 	
 }

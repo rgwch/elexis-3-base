@@ -24,7 +24,6 @@ import org.eclipse.jface.viewers.TableViewer;
 
 import at.medevit.atc_codes.ATCCode;
 import at.medevit.atc_codes.ATCCodeService;
-import at.medevit.ch.artikelstamm.BlackBoxReason;
 import at.medevit.ch.artikelstamm.elexis.common.internal.ATCCodeServiceConsumer;
 import at.medevit.ch.artikelstamm.elexis.common.preference.PreferenceConstants;
 import at.medevit.ch.artikelstamm.elexis.common.ui.provider.atccache.ATCCodeCache;
@@ -41,85 +40,84 @@ import ch.elexis.data.PersistentObject;
 import ch.elexis.data.Query;
 
 public class ArtikelstammFlatDataLoader extends FlatDataLoader implements IDoubleClickListener {
-	
+
 	private ATCQueryFilter atcQueryFilter = new ATCQueryFilter();
 	private boolean useAtcQueryFilter = false;
-	private boolean useMephaPreferredSorter = false;
-	
+	private boolean usePreferredSorter = false;
+
 	@SuppressWarnings("rawtypes")
 	private List filtered = null;
 	@SuppressWarnings("rawtypes")
 	private List raw = null;
 	private SelectorPanelProvider slp;
-	
-	public ArtikelstammFlatDataLoader(CommonViewer cv, Query<? extends PersistentObject> qbe, SelectorPanelProvider slp){
+
+	public ArtikelstammFlatDataLoader(CommonViewer cv, Query<? extends PersistentObject> qbe,
+			SelectorPanelProvider slp) {
 		super(cv, qbe);
 		this.slp = slp;
-		
+
 		setOrderFields(ArtikelstammItem.FLD_DSCR);
 
 		applyQueryFilters();
 		addQueryFilter(new IncludeEANQueryFilter());
 		addQueryFilter(new NoVersionQueryFilter());
-		
-		useMephaPreferredSorter = CoreHub.globalCfg.get(
-			MephaPrefferedProviderSorterAction.CFG_PREFER_MEPHA, false);
+
+		usePreferredSorter = CoreHub.globalCfg.get(PreferedProviderSorterAction.CFG_PREFER_PROVIDER, false);
 	}
-	
+
 	/**
 	 * This filter skips all entries with ID "VERSION"
 	 */
 	private class NoVersionQueryFilter implements QueryFilter {
 		@Override
-		public void apply(Query<? extends PersistentObject> qbe){
+		public void apply(Query<? extends PersistentObject> qbe) {
 			qbe.and();
 			qbe.add("ID", Query.NOT_EQUAL, "VERSION");
 		}
 	}
-	
+
 	private class IncludeEANQueryFilter implements QueryFilter {
 
 		@Override
-		public void apply(Query<? extends PersistentObject> qbe){
-			if(slp.getValues()!=null) {
+		public void apply(Query<? extends PersistentObject> qbe) {
+			if (slp.getValues() != null) {
 				String eanValue = slp.getValues()[0];
-				if(eanValue.length()>0 && StringUtils.isNumeric(eanValue)) {
+				if (eanValue.length() > 0 && StringUtils.isNumeric(eanValue)) {
 					qbe.or();
-					qbe.add(ArtikelstammItem.FLD_GTIN, Query.LIKE, eanValue+"%");
+					qbe.add(ArtikelstammItem.FLD_GTIN, Query.LIKE, eanValue + "%");
 				}
 			}
 		}
 	}
-	
+
 	/**
 	 * This filter limits all results to a certain ATC code
 	 * 
 	 */
 	private class ATCQueryFilter implements QueryFilter {
-		
+
 		private String atcFilter;
-		
+
 		@Override
-		public void apply(Query<? extends PersistentObject> qbe){
-			qbe.add(ArtikelstammItem.FLD_ATC, Query.LIKE, atcFilter+"%");
+		public void apply(Query<? extends PersistentObject> qbe) {
+			qbe.add(ArtikelstammItem.FLD_ATC, Query.LIKE, atcFilter + "%");
 		}
-		
-		public void setAtcFilter(String atcFilter){
+
+		public void setAtcFilter(String atcFilter) {
 			this.atcFilter = atcFilter;
 		}
-		
-		public String getAtcFilter(){
+
+		public String getAtcFilter() {
 			return atcFilter;
 		}
-		
-		public boolean isActive(){
+
+		public boolean isActive() {
 			return atcFilter != null;
 		}
 	}
-	
-	
+
 	@Override
-	public IStatus work(IProgressMonitor monitor, HashMap<String, Object> params){
+	public IStatus work(IProgressMonitor monitor, HashMap<String, Object> params) {
 		if (isSuspended()) {
 			return Status.CANCEL_STATUS;
 		}
@@ -131,9 +129,10 @@ public class ArtikelstammFlatDataLoader extends FlatDataLoader implements IDoubl
 		setQuery();
 		applyQueryFilters();
 
-		if(useMephaPreferredSorter) {
-			// #3627 need to work-around 
-			qbe.addToken(" 1=1 ORDER BY CASE WHEN COMP_GLN='7601001001121' THEN 1 ELSE 2 END, DSCR ASC");
+		if (usePreferredSorter) {
+			// #3627 need to work-around
+			String preferredProvider=CoreHub.localCfg.get(PreferenceConstants.PREFERRED_PROVIDER, "Helvepharm");
+			qbe.addToken(" 1=1 ORDER BY CASE WHEN COMP_NAME like '%"+preferredProvider+"%' THEN 1 ELSE 2 END, DSCR ASC");
 		} else {
 			if (orderFields != null) {
 				qbe.orderBy(false, orderFields);
@@ -143,20 +142,20 @@ public class ArtikelstammFlatDataLoader extends FlatDataLoader implements IDoubl
 			return Status.CANCEL_STATUS;
 		}
 		raw = qbe.execute();
-		
-		if(useAtcQueryFilter) {
+
+		if (useAtcQueryFilter) {
 			if (!atcQueryFilter.isActive()) {
 				insertATCCodeValues(params);
 			} else {
 				addFilterInformation();
 			}
 		}
-		
+
 		if (monitor.isCanceled()) {
 			return Status.CANCEL_STATUS;
 		}
 		UiDesk.asyncExec(new Runnable() {
-			public void run(){
+			public void run() {
 				// Avoid access to disposed table
 				if (tv != null && !tv.getTable().isDisposed()) {
 					tv.setItemCount(0);
@@ -165,29 +164,30 @@ public class ArtikelstammFlatDataLoader extends FlatDataLoader implements IDoubl
 				}
 			}
 		});
-		
+
 		return Status.OK_STATUS;
 	}
-	
+
 	/**
 	 * if {@link ATCQueryFilter} is set, we present the information to the user
 	 */
 	@SuppressWarnings("unchecked")
-	private void addFilterInformation(){
+	private void addFilterInformation() {
 		String atcInfo = ATCCodeServiceConsumer.getATCCodeService().getForATCCode(atcQueryFilter.atcFilter).name_german;
-		String label = "ATC Filter "+atcQueryFilter.atcFilter+" ("+atcInfo+")";
+		String label = "ATC Filter " + atcQueryFilter.atcFilter + " (" + atcInfo + ")";
 		ATCFilterInfoListElement aficle = new ATCFilterInfoListElement(label);
 		raw.add(0, aficle);
 	}
 
 	/**
 	 * adds the atc names we find for the given description on the top of the table
+	 * 
 	 * @param params
 	 */
 	@SuppressWarnings("unchecked")
-	private void insertATCCodeValues(HashMap<String, Object> params){	
-		HashMap<String, String> fieldValuesHashmap =
-			(HashMap<String, String>) params.get(PersistentObjectLoader.PARAM_VALUES);
+	private void insertATCCodeValues(HashMap<String, Object> params) {
+		HashMap<String, String> fieldValuesHashmap = (HashMap<String, String>) params
+				.get(PersistentObjectLoader.PARAM_VALUES);
 		if (fieldValuesHashmap == null)
 			return;
 		String name = fieldValuesHashmap.get(ArtikelstammItem.FLD_DSCR);
@@ -196,40 +196,42 @@ public class ArtikelstammFlatDataLoader extends FlatDataLoader implements IDoubl
 		ATCCodeService atcCodeService = ATCCodeServiceConsumer.getATCCodeService();
 		if (atcCodeService == null)
 			return;
-		List<ATCCode> results =
-			atcCodeService.getATCCodesMatchingName(name, ATCCodeService.ATC_NAME_LANGUAGE_GERMAN, ATCCodeService.MATCH_NAME_BY_NAME_OR_ATC);
+		List<ATCCode> results = atcCodeService.getATCCodesMatchingName(name, ATCCodeService.ATC_NAME_LANGUAGE_GERMAN,
+				ATCCodeService.MATCH_NAME_BY_NAME_OR_ATC);
 
-		boolean showEmptyGroups =
-			CoreHub.globalCfg.get(PreferenceConstants.PREF_SHOW_ATC_GROUPS_WITHOUT_ARTICLES, true);
+		boolean showEmptyGroups = CoreHub.globalCfg.get(PreferenceConstants.PREF_SHOW_ATC_GROUPS_WITHOUT_ARTICLES,
+				true);
 		if (!showEmptyGroups) {
 			for (ATCCode atcCode : results) {
-				if(ATCCodeCache.getAvailableArticlesByATCCode(atcCode)>0) raw.add(atcCode);
+				if (ATCCodeCache.getAvailableArticlesByATCCode(atcCode) > 0)
+					raw.add(atcCode);
 			}
 		} else {
 			raw.addAll(0, results);
 		}
 	}
-	
-	public void setResult(List<PersistentObject> res){
+
+	public void setResult(List<PersistentObject> res) {
 		raw = res;
 	}
-	
+
 	/**
-	 * prepare the query so it returns the appropriate Objects on execute(). The default
-	 * implemetation lets the ControlFieldProvider set the query. Subclasses may override
+	 * prepare the query so it returns the appropriate Objects on execute(). The
+	 * default implemetation lets the ControlFieldProvider set the query. Subclasses
+	 * may override
 	 */
-	protected void setQuery(){
+	protected void setQuery() {
 		qbe.clear();
 		ControlFieldProvider cfp = cv.getConfigurer().getControlFieldProvider();
 		if (cfp != null) {
 			cfp.setQuery(qbe);
 		}
 	}
-	
+
 	/**
 	 * copied from {@link FlatDataLoader}
 	 */
-	public void updateElement(int index){
+	public void updateElement(int index) {
 		if (filtered != null) {
 			if (index >= 0 && index < filtered.size()) {
 				Object o = filtered.get(index);
@@ -240,13 +242,14 @@ public class ArtikelstammFlatDataLoader extends FlatDataLoader implements IDoubl
 			}
 		}
 	}
-	
+
 	private String filterValueStore;
-	
+
 	@Override
-	public void doubleClick(DoubleClickEvent event){
+	public void doubleClick(DoubleClickEvent event) {
 		StructuredSelection selection = (StructuredSelection) event.getSelection();
-		if(selection.getFirstElement()==null) return;
+		if (selection.getFirstElement() == null)
+			return;
 		if (selection.getFirstElement() instanceof ATCCode) {
 			filterValueStore = slp.getValues()[0];
 			slp.clearValues();
@@ -255,18 +258,18 @@ public class ArtikelstammFlatDataLoader extends FlatDataLoader implements IDoubl
 		} else if (selection.getFirstElement() instanceof ATCFilterInfoListElement) {
 			slp.clearValues();
 			ActiveControl ac = slp.getPanel().getControls().get(0);
-			ac.setText((filterValueStore!=null) ? filterValueStore : "");
+			ac.setText((filterValueStore != null) ? filterValueStore : "");
 			setAtcQueryFilterValue(null);
 		}
 	}
-	
+
 	/**
 	 * Set the ATC value to filter the selector
 	 * 
 	 * @param filterValue
 	 *            an ATC code or <code>null</code> to remove
 	 */
-	public void setAtcQueryFilterValue(String filterValue){
+	public void setAtcQueryFilterValue(String filterValue) {
 		if (filterValue == null) {
 			removeQueryFilter(atcQueryFilter);
 			atcQueryFilter.setAtcFilter(null);
@@ -276,12 +279,13 @@ public class ArtikelstammFlatDataLoader extends FlatDataLoader implements IDoubl
 		}
 		job.schedule();
 	}
-	
+
 	/**
 	 * set the atc query filter to active or inactive
+	 * 
 	 * @param useAtcQueryFilter
 	 */
-	public void setUseAtcQueryFilter(boolean useAtcQueryFilter){
+	public void setUseAtcQueryFilter(boolean useAtcQueryFilter) {
 		this.useAtcQueryFilter = useAtcQueryFilter;
 		if (!useAtcQueryFilter) {
 			removeQueryFilter(atcQueryFilter);
@@ -289,24 +293,23 @@ public class ArtikelstammFlatDataLoader extends FlatDataLoader implements IDoubl
 		}
 		job.schedule();
 	}
-	
+
 	/**
 	 * 
 	 * @return <code>true</code> if the atc query filter is active
 	 */
-	public boolean isUseAtcQueryFilter(){
+	public boolean isUseAtcQueryFilter() {
 		return useAtcQueryFilter;
 	}
-	
-	
+
 	/**
 	 * should filtering prefer Mepha articles? #3627
 	 * 
 	 * @param doPrefer
 	 *            if yes, first in list are Mepha articles A-Z then others A-Z
 	 */
-	public void setUseMephaPrefferedProviderSorter(boolean doPreferMepha){
-		this.useMephaPreferredSorter = doPreferMepha;
+	public void setUsePreferredProviderSorter(boolean usePreferred) {
+		this.usePreferredSorter = usePreferred;
 		job.schedule();
 	}
 }

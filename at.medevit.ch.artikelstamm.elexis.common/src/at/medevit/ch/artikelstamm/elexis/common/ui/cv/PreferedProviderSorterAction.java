@@ -7,49 +7,49 @@
  * 
  * Contributors:
  *     MEDEVIT <office@medevit.at> - initial API and implementation
+ *     G.Weirich - make preferred provider configurable
  ******************************************************************************/
 package at.medevit.ch.artikelstamm.elexis.common.ui.cv;
 
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.wb.swt.ResourceManager;
 
 import ch.elexis.core.data.activator.CoreHub;
-import ch.elexis.core.ui.icons.ImageSize;
-import ch.elexis.core.ui.icons.Images;
 
-public class MephaPrefferedProviderSorterAction extends Action {
+public class PreferedProviderSorterAction extends Action {
 
 	private ArtikelstammFlatDataLoader afdl;
 
-	public static final String CFG_PREFER_MEPHA = "artikelstammPreferMepha";
-	
-	public MephaPrefferedProviderSorterAction(ArtikelstammFlatDataLoader afdl){
+	public static final String CFG_PREFER_PROVIDER = "artikelstammPreferProvider";
+
+	public PreferedProviderSorterAction(ArtikelstammFlatDataLoader afdl) {
 		this.afdl = afdl;
 	}
-	
+
 	@Override
-	public String getText(){
-		return "Mepha";
+	public String getText() {
+		return "Pref";
 	}
-	
+
 	@Override
-	public String getToolTipText(){
-		return "Mepha Artikel bevorzugen (werden zuoberst angezeigt)";
+	public String getToolTipText() {
+		return "Artikel des gewünschten Herstellers bevorzugen (werden zuoberst angezeigt)";
 	}
-	
+
 	@Override
-	public int getStyle(){
+	public int getStyle() {
 		return Action.AS_CHECK_BOX;
 	}
-	
+
 	@Override
-	public ImageDescriptor getImageDescriptor(){
-		return Images.lookupImageDescriptor("mepha.png", ImageSize._16x16_DefaultIconSize);
+	public ImageDescriptor getImageDescriptor() {
+		return ResourceManager.getPluginImageDescriptor("at.medevit.ch.artikelstamm.ui", "/rsc/icons/heart.png");
 	}
-	
+
 	@Override
-	public void run(){
-		CoreHub.globalCfg.set(CFG_PREFER_MEPHA, isChecked());		
-		afdl.setUseMephaPrefferedProviderSorter(isChecked());
+	public void run() {
+		CoreHub.globalCfg.set(CFG_PREFER_PROVIDER, isChecked());
+		afdl.setUsePreferredProviderSorter(isChecked());
 	}
 }

@@ -6,6 +6,8 @@ import org.eclipse.core.databinding.observable.value.IObservableValue;
 import org.eclipse.jface.databinding.swt.WidgetProperties;
 import org.eclipse.jface.preference.PreferencePage;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.FocusAdapter;
+import org.eclipse.swt.events.FocusEvent;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
@@ -28,6 +30,7 @@ import at.medevit.ch.artikelstamm.ui.DetailComposite;
 import org.eclipse.swt.widgets.Button;
 
 import ch.elexis.core.data.activator.CoreHub;
+import ch.elexis.core.ui.util.SWTHelper;
 
 public class ArtikelstammPreferencePage extends PreferencePage implements IWorkbenchPreferencePage {
 	public Marge margeA, margeB, margeC;
@@ -50,6 +53,8 @@ public class ArtikelstammPreferencePage extends PreferencePage implements IWorkb
 	private Button btnRadioEnglish;
 	private Button btnShowArticlePrice;
 	private Button btnShowEmptyATCCodeGroups;
+	private Text txPreferredProvider;
+	private Label lblPreferredProvider;
 	
 	/**
 	 * Create the preference page.
@@ -193,7 +198,20 @@ public class ArtikelstammPreferencePage extends PreferencePage implements IWorkb
 		} else {
 			btnRadioEnglish.setSelection(true);
 		}
-		
+		new Label(container,SWT.SEPARATOR).setLayoutData(SWTHelper.getFillGridData());
+		lblPreferredProvider=new Label(container,SWT.NONE);
+		lblPreferredProvider.setText("Bevorzugter Anbieter");
+		txPreferredProvider=new Text(container,SWT.BORDER);
+		txPreferredProvider.addFocusListener(new FocusAdapter() {
+
+			@Override
+			public void focusLost(FocusEvent e) {
+				CoreHub.localCfg.set(PreferenceConstants.PREFERRED_PROVIDER, txPreferredProvider.getText());
+			}
+			
+		});
+		txPreferredProvider.setText(CoreHub.localCfg.get(PreferenceConstants.PREFERRED_PROVIDER, ""));
+		txPreferredProvider.setLayoutData(SWTHelper.getFillGridData(1, true, 1, false));
 		m_bindingContext = initDataBindings();
 		
 		return container;

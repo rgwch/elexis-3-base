@@ -12,7 +12,7 @@ import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 
-import at.medevit.ch.artikelstamm.elexis.common.ui.cv.MephaPrefferedProviderSorterAction;
+import at.medevit.ch.artikelstamm.elexis.common.ui.cv.PreferedProviderSorterAction;
 import at.medevit.ch.artikelstamm.medcalendar.MedCalendarSection;
 import at.medevit.ch.artikelstamm.medcalendar.Messages;
 import ch.artikelstamm.elexis.common.ArtikelstammItem;
@@ -52,7 +52,7 @@ public class MedCalArtikelstammFlatDataLoader extends FlatDataLoader implements
 		addQueryFilter(new NoVersionQueryFilter());
 		
 		useMephaPreferredSorter =
-			CoreHub.globalCfg.get(MephaPrefferedProviderSorterAction.CFG_PREFER_MEPHA, false);
+			CoreHub.globalCfg.get(PreferedProviderSorterAction.CFG_PREFER_PROVIDER, false);
 		
 	}
 	
