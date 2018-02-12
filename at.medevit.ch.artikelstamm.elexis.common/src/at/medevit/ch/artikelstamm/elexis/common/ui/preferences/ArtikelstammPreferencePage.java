@@ -198,7 +198,7 @@ public class ArtikelstammPreferencePage extends PreferencePage implements IWorkb
 		} else {
 			btnRadioEnglish.setSelection(true);
 		}
-		new Label(container,SWT.SEPARATOR).setLayoutData(SWTHelper.getFillGridData());
+		new Label(container,SWT.SEPARATOR|SWT.HORIZONTAL).setLayoutData(SWTHelper.getFillGridData());
 		lblPreferredProvider=new Label(container,SWT.NONE);
 		lblPreferredProvider.setText("Bevorzugter Anbieter");
 		txPreferredProvider=new Text(container,SWT.BORDER);
