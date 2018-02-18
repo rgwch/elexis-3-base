@@ -257,7 +257,7 @@
   </repository>
    <repository>
     <id>elexis.3.core</id>
-    <url>http://download.elexis.info/elexis/${git.core.branch}/p2/elexis-3-core</url>
+    <url>http://www.elexis.ch/ungrad2018/p2/elexis-core/latest</url>
     <layout>p2</layout>
   </repository>
 </repositories>
