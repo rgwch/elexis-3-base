@@ -1,15 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?eclipse version="3.4"?>
 <plugin>
-   <extension
-         point="ch.elexis.core.ui.Verrechnungscode">
-      <Artikel
-            CodeDetailDisplay="at.medevit.ch.artikelstamm.elexis.open.ui.OpenArtikelstammDetailDisplay"
-            CodeSelectorFactory="at.medevit.ch.artikelstamm.elexis.common.ui.cv.ArtikelstammCodeSelectorFactory"
-            ElementFactory="ch.artikelstamm.elexis.common.ArtikelstammPOFactory"
-            ImporterClass="at.medevit.ch.artikelstamm.elexis.common.importer.ArtikelstammImporterPage"
-            name="Artikelstamm CH">
-      </Artikel>
-   </extension>
 
 </plugin>
