@@ -94,7 +94,10 @@ public interface IArtikelstammItem {
 	public boolean isNarcotic();
 	
 	/**
+	 * Liste pharmazeutischer Präparate mit spezieller Verwendung (LPPV)
+	 * This article is neither paid by base insurance nor by private insurance.
 	 * @return <code>true</code> if article is in LPPV list
+	 * 
 	 */
 	public boolean isInLPPV();
 	
