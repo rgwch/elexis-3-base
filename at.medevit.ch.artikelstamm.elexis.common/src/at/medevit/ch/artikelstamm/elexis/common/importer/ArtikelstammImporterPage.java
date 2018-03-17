@@ -39,13 +39,13 @@ public class ArtikelstammImporterPage extends ImporterPage {
 	@Override
 	public IStatus doImport(IProgressMonitor monitor) throws Exception{
 		log.info("ArtikelstammImporterPage.doImport " + results[0]);
-		return ArtikelstammImporter.performImport(monitor, new FileInputStream(results[0]), bPharma, bNonPharma, null);
+		return ArtikelstammImporter.performImport(monitor, new FileInputStream(results[0]), null);
 	}
 	
 	@Override
-	public void collect() {
-		bPharma=cbPharma.getSelection();
-		bNonPharma=cbNonPharma.getSelection();
+	public void collect(){
+		bPharma = cbPharma.getSelection();
+		bNonPharma = cbNonPharma.getSelection();
 	}
 	
 	@Override

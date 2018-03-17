@@ -40,7 +40,6 @@ import org.slf4j.LoggerFactory;
 
 import ch.elexis.core.data.activator.CoreHub;
 import ch.elexis.core.data.events.ElexisEventDispatcher;
-import ch.elexis.core.ui.actions.KonsFilter;
 import ch.elexis.core.ui.actions.ObjectFilterRegistry;
 import ch.elexis.core.ui.util.SWTHelper;
 import ch.elexis.data.Fall;
@@ -167,7 +166,12 @@ public class KonsListDisplay extends Composite implements IJobChangeListener, IJ
 				if (patient != null) {
 					Fall[] faelle  = null;
 					if (showAllCases) {faelle = patient.getFaelle(); } else {
-						faelle = new Fall[]  { (Fall) ElexisEventDispatcher.getSelected(Fall.class) };
+						Fall actFall = (Fall) ElexisEventDispatcher.getSelected(Fall.class);
+						if (actFall != null) {
+							faelle = new Fall[]  { actFall };
+						} else {
+							faelle = new Fall[]  { };
+						}
 					}
 
 					if (faelle.length > 0) {
