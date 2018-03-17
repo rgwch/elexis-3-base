@@ -70,7 +70,7 @@ public class LocalDocumentServiceHolder {
 		});
 	}
 	
-	public static void unbind(ILocalDocumentService service){
+	public void unbind(ILocalDocumentService service){
 		LocalDocumentServiceHolder.localDocumentService = Optional.empty();
 	}
 	

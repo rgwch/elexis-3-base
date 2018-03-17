@@ -44,10 +44,12 @@ public class ATCArtikelstammDecoratingLabelProvider extends DecoratingLabelProvi
 					ret = ret + " <" + ai.getPublicPrice() + "> ";
 				}
 			}
+			/*
 			String subst = ai.get(ArtikelstammItem.FLD_SUBSTANCE);
 			if (!StringTool.isNothing(subst)) {
 				ret = ret + " (" + subst + ")";
 			}
+			*/
 			return ret;
 		} else if (element instanceof ATCCode) {
 			String atcLabel = atcLabelProvider.getText(element);

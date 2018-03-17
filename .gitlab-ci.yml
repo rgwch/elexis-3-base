@@ -1,6 +1,10 @@
 # Build script used by gitlab.medelexis.ch
 variables:
+<<<<<<< HEAD
    ORIGIN_BRANCH: "3.4" 
+=======
+   ORIGIN_BRANCH: "3.5"
+>>>>>>> 3.5
 
 stages:
     - build

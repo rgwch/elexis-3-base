@@ -11,8 +11,8 @@
     <juno-repo.url>http://download.eclipse.org/releases/juno</juno-repo.url>
     <tycho-repo.url>https://oss.sonatype.org/content/groups/public/</tycho-repo.url>
     <repo_name>elexis.3.base</repo_name>
-    <git.core.branch>3.4</git.core.branch>
-    <git.target.branch>3.4</git.target.branch>
+    <git.core.branch>3.5</git.core.branch>
+    <git.target.branch>3.5</git.target.branch>
     <ROOT>${project.basedir}/compositeRepository</ROOT>
   </properties>
   <packaging>pom</packaging>
@@ -250,6 +250,8 @@
   <module>ch.elexis.barcode.scanner</module>
   <module>ch.elexis.barcode.scanner.feature</module>
   <module>ch.elexis.ebanking</module>
+  <module>ch.novcom.elexis.mednet.plugin</module>
+  <module>ch.novcom.elexis.mednet.plugin.feature</module>
 </modules>
 <repositories>
   <repository>
@@ -260,6 +262,7 @@
    <repository>
     <id>elexis.3.core</id>
     <url>http://www.elexis.ch/ungrad2018/p2/elexis-core/latest</url>
+    <!-- url>http://download.elexis.info/elexis/${git.core.branch}/git commit -am"p2/elexis-3-core</url -->
     <layout>p2</layout>
   </repository>
 </repositories>
