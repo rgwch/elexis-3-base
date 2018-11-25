@@ -183,6 +183,7 @@ Adelbodner
 Eptinger
 Ettinger
 Hagenthaler
+Liestaler
 Hugentobler
 Elexiker
 Adorato
@@ -227,6 +228,13 @@ Schmidt
 Schneider
 Fischer
 Keiser
+Hufysen
+Pepper
+Targaryan
+Stark
+Strong
+Forte
+Fortissime
 Stuart
 Weber
 Meyer
@@ -241,6 +249,7 @@ Rolls
 Royce
 Daimler
 Schulz
+Horseshoe
 Hoffmann
 Schäfer
 Koch
