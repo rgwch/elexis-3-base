@@ -28,6 +28,7 @@ import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.progress.IProgressService;
 
+import ch.elexis.core.constants.StringConstants;
 import ch.elexis.core.data.activator.CoreHub;
 import ch.elexis.core.ui.UiDesk;
 import ch.elexis.core.ui.util.SWTHelper;
@@ -178,9 +179,9 @@ public class Shake implements IWorkbenchWindowActionDelegate {
 		monitor.worked(Math.round(workUnits * .2f));
 		for (Kontakt k : list) {
 			String vorname = "";
-			// Mandanten behalten
-			// if(k.get(Kontakt.FLD_IS_MANDATOR).equalsIgnoreCase(StringConstants.ONE))
-			// continue;
+			// Anwender behalten
+			if(k.get(Kontakt.FLD_IS_USER).equalsIgnoreCase(StringConstants.ONE))
+			continue;
 			
 			if (zufallsnamen) {
 				k.set("Bezeichnung1", n.getRandomNachname());
