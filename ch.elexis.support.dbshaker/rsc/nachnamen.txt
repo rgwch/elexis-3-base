@@ -15,6 +15,8 @@ Ehrsam
 Biegsam
 Fliegenpilz
 Eisenherz
+Herold
+Marschall
 Zeppelin
 Sprecher
 Lauscher
@@ -94,6 +96,7 @@ Hamburger
 Freiburger
 Berliner
 Bottminger
+Awkward
 Beringer
 Behringer
 Ettinger
