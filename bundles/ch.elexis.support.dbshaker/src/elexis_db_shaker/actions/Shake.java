@@ -31,6 +31,7 @@ import org.eclipse.ui.progress.IProgressService;
 import ch.elexis.core.data.activator.CoreHub;
 import ch.elexis.core.ui.UiDesk;
 import ch.elexis.core.ui.util.SWTHelper;
+import ch.elexis.data.Fall;
 import ch.elexis.data.Konsultation;
 import ch.elexis.data.Kontakt;
 import ch.elexis.data.PersistentObject;
@@ -198,6 +199,13 @@ public class Shake implements IWorkbenchWindowActionDelegate {
 			if (k.istPerson()) {
 				Person p = Person.load(k.getId());
 				p.set(Person.SEX, StringTool.isFemale(vorname) ? Person.FEMALE : Person.MALE);
+			}
+			if(k.istPatient()) {
+				Query<Fall> qf=new Query<Fall>(Fall.class,"patientid",k.get("id"));
+				for(Fall f:qf.execute()) {
+					f.setFallNummer("");
+				}
+
 			}
 			k.set(Kontakt.FLD_ANSCHRIFT, "");
 			k.set(Kontakt.FLD_PHONE1, getPhone());

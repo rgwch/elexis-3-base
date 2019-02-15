@@ -62,7 +62,9 @@ public class Namen {
 	}
 	
 	public String getRandomVorname(){
-		return vornamen.get((int) Math.round(Math.random() * (vornamen.size() - 1))).trim();
+		String n= vornamen.get((int) Math.round(Math.random() * (vornamen.size() - 1))).trim();
+		String[] ng=n.split("\\s*,");
+		return ng[0];
 	}
 	
 	public String getRandomNachname(){
