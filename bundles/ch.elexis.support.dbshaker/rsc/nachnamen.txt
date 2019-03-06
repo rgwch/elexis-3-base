@@ -2,6 +2,9 @@ Sorglos
 Fauntleroy
 Knoblauch
 Bärlauch
+Vadder
+Fugger
+Centovalli
 Bierbauch
 Horkrux
 Ypsilon
@@ -18,6 +21,7 @@ Eisenherz
 Zeppelin
 Sprecher
 Lauscher
+Virginian
 Ultimo
 Zardos
 Zyniker
@@ -36,6 +40,11 @@ Helmchen
 Sternchen
 Morgenstern
 Abendstern
+Skywalker
+Moonwalker
+Nachtwächter
+Schlafwandler
+Klabauter
 Augenstern
 Haarlos
 Bartlos
@@ -45,6 +54,7 @@ Moonwalker
 Verleihnix
 Alabonheur
 Alacarte
+Koriander
 Alabaster
 Grünlich
 Gräulich
@@ -394,3 +404,4 @@ Seemann
 Heiler
 Huber
 Haber
+Sorgenfalt

@@ -1,6 +1,7 @@
 Sandokan,m
 Tarzan,m
 Chnobli
+Chnulleri,m
 Kermit,m
 Flocke.w
 Vaseline,w
@@ -8,6 +9,9 @@ Zork,m
 Astanzia,w
 Albumin,m
 Albumine,w
+Schnüggel,m
+Müüsli,w
+Wolf-Ludwig,m
 Romulus,m
 Flip,m
 Fix,m
@@ -17,10 +21,15 @@ Isnogud,m
 Tunichgut,m
 Fiorentina,w
 Siciliana,w
+Klaus-Erich,m
+Gelsomina,w
 Romana,w
 Romina,w
+Baudolino,m
 Arrabiata,w
 Thusnelda,w
+Holofernes,m
+Plauderi,m
 Tunix,m
 Obelix,m
 Asterix,m
