@@ -15,7 +15,8 @@
       </repository>
       <repository>
         <id>elexis.3.core</id>
-        <url>http://download.elexis.info/elexis/${git.core.branch}/p2/elexis-3-core</url>
+        <!-- url>http://download.elexis.info/elexis/${git.core.branch}/p2/elexis-3-core</url -->
+        <url>file:${elexis_root}/elexis-3-core/ch.elexis.core.p2site/target/repository</url>
         <layout>p2</layout>
       </repository>
     </repositories>
