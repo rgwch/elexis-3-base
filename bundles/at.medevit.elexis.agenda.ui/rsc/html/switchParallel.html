@@ -46,6 +46,12 @@
 				},
 				eventRender: eventRenderCallback,
 				customButtons: {
+					pdf: {
+						text: 'Pdf',
+						click: function () {
+							pdfFunction();
+						}						
+					},
 					switch: {
 						text: 'Woche',
 						click: function () {
@@ -63,7 +69,7 @@
 				header: {
 					left: 'title',
 					center: '',
-					right: 'switch reload,today prev,next'
+					right: 'pdf switch reload,today prev,next'
 				},
 			});
 		});
@@ -161,7 +167,12 @@
 			if (event.description) {
 				var firstpart = event.description.split('<br /><br />');
 				if (firstpart.length > 0) {
-					element.find(".fc-title").append("<br/>" + firstpart[0]);
+					if (!event.title.trim()) {
+						element.find(".fc-title").text(firstpart[0]);
+					}
+					else {
+						element.find(".fc-title").append("<br/>" + firstpart[0]);
+					}
 				} else {
 					element.find(".fc-title").append("<br/>" + event.description);
 				}

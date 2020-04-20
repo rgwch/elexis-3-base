@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -63,7 +64,10 @@ import at.medevit.elexis.emediplan.core.model.chmed16a.Medication;
 import at.medevit.elexis.emediplan.core.model.chmed16a.Posology;
 import at.medevit.elexis.inbox.model.IInboxElementService;
 import ch.artikelstamm.elexis.common.ArtikelstammItem;
+import ch.elexis.core.constants.Preferences;
+import ch.elexis.core.data.activator.CoreHub;
 import ch.elexis.core.jdt.NonNull;
+import ch.elexis.core.preferences.Messages;
 import ch.elexis.core.services.IFormattedOutput;
 import ch.elexis.core.services.IFormattedOutputFactory;
 import ch.elexis.core.services.IFormattedOutputFactory.ObjectType;
@@ -93,9 +97,9 @@ public class EMediplanServiceImpl implements EMediplanService {
 	
 	@Override
 	public void exportEMediplanPdf(Mandant author, Patient patient,
-		List<Prescription> prescriptions, OutputStream output){
+			List<Prescription> prescriptions, boolean addDesc, OutputStream output) {
 		if (prescriptions != null && !prescriptions.isEmpty() && output != null) {
-			Optional<String> jsonString = getJsonString(author, patient, prescriptions);
+			Optional<String> jsonString = getJsonString(author, patient, prescriptions, addDesc);
 			Optional<Image> qrCode =
 				jsonString.map(json -> getQrCode(json)).orElse(Optional.empty());
 			
@@ -104,6 +108,19 @@ public class EMediplanServiceImpl implements EMediplanService {
 			jaxbModel.ifPresent(model -> {
 				createPdf(qrCode, model, output);
 			});
+		}
+	}
+	
+	@Override
+	public void exportEMediplanJson(Mandant author, Patient patient,
+		List<Prescription> prescriptions, OutputStream output){
+		if (prescriptions != null && !prescriptions.isEmpty() && output != null) {
+			Optional<String> jsonString = getJsonString(author, patient, prescriptions, false);
+			if (jsonString.isPresent()) {
+				try (PrintWriter writer = new PrintWriter(output)) {
+					writer.write(jsonString.get());
+				}
+			}
 		}
 	}
 	
@@ -117,6 +134,7 @@ public class EMediplanServiceImpl implements EMediplanService {
 				fopFactory.getFormattedOutputImplementation(ObjectType.JAXB, OutputType.PDF);
 			HashMap<String, String> parameters = new HashMap<>();
 			parameters.put("logoJpeg", getEncodedLogo());
+			parameters.put("commentText", CoreHub.userCfg.get(Preferences.MEDICATION_SETTINGS_EMEDIPLAN_HEADER_COMMENT, Messages.Medication_headerComment));
 			qrCode.ifPresent(qr -> {
 				parameters.put("qrJpeg", getEncodedQr(qr));
 			});
@@ -242,8 +260,8 @@ public class EMediplanServiceImpl implements EMediplanService {
 	}
 	
 	protected Optional<String> getJsonString(Mandant author, Patient patient,
-		List<Prescription> prescriptions){
-		Medication medication = Medication.fromPrescriptions(author, patient, prescriptions);
+			List<Prescription> prescriptions, boolean addDesc) {
+		Medication medication = Medication.fromPrescriptions(author, patient, prescriptions, addDesc);
 		return Optional.ofNullable(gson.toJson(medication));
 	}
 	
@@ -252,12 +270,9 @@ public class EMediplanServiceImpl implements EMediplanService {
 		String json = getDecodedJsonString(chunk);
 		if (chunk.length() > 8) {
 			logger.debug("json version: " + chunk.substring(5, 8));
-			GsonBuilder gb = new GsonBuilder();
-			gb.registerTypeAdapter(Medication.class, new MedicationDeserializer());
-			Gson g = gb.create();
-			Medication m = g.fromJson(json, Medication.class);
-			m.chunk = chunk;
-			return m;
+			Medication ret = createModelFromJsonString(json);
+			ret.chunk = chunk;
+			return ret;
 		}
 		else {
 			logger.error("invalid json length - cannot parseable");
@@ -266,6 +281,14 @@ public class EMediplanServiceImpl implements EMediplanService {
 		return null;
 	}
 	
+	protected Medication createModelFromJsonString(String jsonString) {
+		GsonBuilder gb = new GsonBuilder();
+		gb.registerTypeAdapter(Medication.class, new MedicationDeserializer());
+		Gson g = gb.create();
+		Medication m = g.fromJson(jsonString, Medication.class);
+		return m;
+	}
+
 	public void addExistingArticlesToMedication(Medication medication){
 		if (medication != null) {
 			findPatientForMedication(medication);
@@ -331,7 +354,11 @@ public class EMediplanServiceImpl implements EMediplanService {
 			if (pos.D != null) {
 				int size = pos.D.size();
 				for (float f : pos.D) {
-					buf.append((int) f);
+					if (f % 1 != 0) {
+						buf.append(f);
+					} else {
+						buf.append((int) f);
+					}
 					size--;
 					if (size != 0) {
 						buf.append("-");

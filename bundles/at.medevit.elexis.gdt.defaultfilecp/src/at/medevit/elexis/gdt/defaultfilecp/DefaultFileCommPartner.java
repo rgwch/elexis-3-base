@@ -17,10 +17,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.slf4j.LoggerFactory;
+
 import at.medevit.elexis.gdt.constants.Feld8402Constants;
 import at.medevit.elexis.gdt.constants.GDTConstants;
 import at.medevit.elexis.gdt.constants.GDTPreferenceConstants;
 import at.medevit.elexis.gdt.constants.SystemConstants;
+import at.medevit.elexis.gdt.interfaces.HandlerProgramType;
 import at.medevit.elexis.gdt.interfaces.IGDTCommunicationPartner;
 import at.medevit.elexis.gdt.interfaces.IGDTCommunicationPartnerProvider;
 
@@ -112,15 +115,26 @@ public class DefaultFileCommPartner implements IGDTCommunicationPartnerProvider 
 	}
 	
 	@Override
-	public String getExternalHandlerProgram(){
-		String executable =
-			defaultFileCommPartner.getSettings().get(
-				defaultFileCommPartner.getFileTransferExecuteable(),
-				null);
+	public String getExternalHandlerProgram(HandlerProgramType handlerType){
+		String executable = null;
+		if (handlerType == HandlerProgramType.VIEWER) {
+			executable = defaultFileCommPartner.getSettings()
+				.get(defaultFileCommPartner.getFileTransferViewerExecuteable(), null);
+		} else {
+			executable = defaultFileCommPartner.getSettings()
+				.get(defaultFileCommPartner.getFileTransferExecuteable(), null);
+		}
+		LoggerFactory.getLogger(getClass())
+			.info("Find external handler [" + executable + "] of [" + defaultFileCommPartner.getId()
+				+ "] in [" + defaultFileCommPartner.getSettings().getClass().getSimpleName() + "]");
 		if (executable != null) {
 			File execFile = new File(executable);
-			if (execFile.canExecute())
+			if (execFile.canExecute()) {
 				return executable;
+			} else {
+				LoggerFactory.getLogger(getClass())
+					.warn("Can not execute external handler [" + executable + "]");
+			}
 		}
 		return null;	
 	}
@@ -219,17 +233,29 @@ public class DefaultFileCommPartner implements IGDTCommunicationPartnerProvider 
 					}
 					
 					@Override
-					public String getExternalHandlerProgram() {
-						String executable =
-							defaultFileCommPartner.getSettings()
-								.get(fileCommPartner.getFileTransferExecuteable(),
-									null);
-							if (executable != null) {
-								File execFile = new File(executable);
-								if (execFile.canExecute())
-									return executable;
+					public String getExternalHandlerProgram(HandlerProgramType handlerType){
+						String executable = null;
+						if (handlerType == HandlerProgramType.VIEWER) {
+							executable = defaultFileCommPartner.getSettings()
+									.get(fileCommPartner.getFileTransferViewerExecuteable(), null);
+						} else {
+							executable = defaultFileCommPartner.getSettings()
+								.get(fileCommPartner.getFileTransferExecuteable(), null);
+						}
+						LoggerFactory.getLogger(getClass())
+								.info("Find external handler [" + executable + "] of [" + fileCommPartner.getId()
+										+ "] in [" + defaultFileCommPartner.getSettings().getClass().getSimpleName()
+										+ "]");
+						if (executable != null) {
+							File execFile = new File(executable);
+							if (execFile.canExecute()) {
+								return executable;
+							} else {
+								LoggerFactory.getLogger(getClass())
+										.warn("Can not execute external handler [" + executable + "]");
 							}
-							return null;
+						}
+						return null;
 					}
 					
 					@Override

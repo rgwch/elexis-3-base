@@ -13,6 +13,7 @@ package at.medevit.elexis.emediplan.core.model.chmed16a;
 import java.util.ArrayList;
 import java.util.List;
 
+import ch.elexis.core.model.prescription.EntryType;
 import ch.elexis.data.Prescription;
 import ch.rgw.tools.TimeTool;
 
@@ -35,10 +36,17 @@ public class Posology {
 		if (endDate != null && !endDate.isEmpty()) {
 			posology.DtTo = new TimeTool(endDate).toString(TimeTool.DATE_ISO);
 		}
-		ArrayList<Float> floats = Prescription.getDoseAsFloats(prescription.getDosis());
-		if (floats != null && !floats.isEmpty()) {
-			posology.TT = TakingTime.fromFloats(floats, prescription.isReserveMedication());
+		String[] signature = Prescription.getSignatureAsStringArray(prescription.getDosis());
+		boolean isFreetext = !signature[0].isEmpty() && signature[1].isEmpty() && signature[2].isEmpty()
+				&& signature[3].isEmpty();
+		if (!isFreetext) {
+			ArrayList<Float> floats = Prescription.getDoseAsFloats(prescription.getDosis());
 			posology.D = floats;
+			// posology.TT = TakingTime.fromFloats(floats,
+			// prescription.isReserveMedication());
+		}
+		if (prescription.getEntryType() == EntryType.RESERVE_MEDICATION) {
+			posology.InRes = 1;
 		}
 		ret.add(posology);
 		return ret;

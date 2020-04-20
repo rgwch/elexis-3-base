@@ -10,12 +10,14 @@ import org.eclipse.jface.action.Action;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
+import org.slf4j.LoggerFactory;
 
-import ch.elexis.connect.sysmex.packages.AbstractData;
+import ch.elexis.connect.sysmex.packages.IProbe;
 import ch.elexis.connect.sysmex.packages.KX21Data;
 import ch.elexis.connect.sysmex.packages.KX21NData;
 import ch.elexis.connect.sysmex.packages.PackageException;
 import ch.elexis.connect.sysmex.packages.PocH100iData;
+import ch.elexis.connect.sysmex.packages.UC1000Data;
 import ch.elexis.connect.sysmex.ui.Preferences;
 import ch.elexis.connect.sysmex.ui.WhichPatientDialog;
 import ch.elexis.core.data.activator.CoreHub;
@@ -221,23 +223,26 @@ public class SysmexAction extends Action implements ComPortListener {
 	 * 
 	 * @param probe
 	 */
-	private void processProbe(final AbstractData probe){
+	private void processProbe(final IProbe probe){
 		UiDesk.getDisplay().syncExec(new Runnable() {
 			
 			public void run(){
 				UiDesk.getDisplay().syncExec(new Runnable() {
 					public void run(){
-						Patient suggestedPatient = findSuggestedPatient(probe.getPatientId());
-						// only open selection dialog if there is a suggestion available
-						if (suggestedPatient != null) {
-							WhichPatientDialog wpDialog =
-								new WhichPatientDialog(UiDesk.getTopShell(), suggestedPatient);
-							wpDialog.open();
-							selectedPatient = wpDialog.getPatient();
+						// perform direct import if patient with matching patient id is found
+						selectedPatient = Patient.loadByPatientID(probe.getPatientId());
+						if (selectedPatient == null || !selectedPatient.exists()) {
+							Patient suggestedPatient = findSuggestedPatient(probe.getPatientId());
+							// only open selection dialog if there is a suggestion available
+							if (suggestedPatient != null) {
+								WhichPatientDialog wpDialog =
+									new WhichPatientDialog(UiDesk.getTopShell(), suggestedPatient);
+								wpDialog.open();
+								selectedPatient = wpDialog.getPatient();
+							}
 						}
-						
-						// case no patient selection was orcould be made yet
-						if (selectedPatient == null) {
+						// case no patient selection could be made yet
+						if (selectedPatient == null || !selectedPatient.exists()) {
 							KontaktSelektor ksl = new KontaktSelektor(Hub.getActiveShell(),
 								Patient.class, Messages.SysmexAction_Patient_Title,
 								Messages.SysmexAction_Patient_Text,
@@ -252,9 +257,16 @@ public class SysmexAction extends Action implements ComPortListener {
 								selectedPatient = null;
 							}
 						}
+						if (selectedPatient == null || !selectedPatient.exists()) {
+							LoggerFactory.getLogger(getClass())
+								.info("No patient for id [" + probe.getPatientId() + "]");
+						} else {
+							LoggerFactory.getLogger(getClass()).info("Found patient ["
+								+ selectedPatient + "] for id [" + probe.getPatientId() + "]");
+						}
 					}
 				});
-				if (selectedPatient != null) {
+				if (selectedPatient != null && selectedPatient.exists()) {
 					try {
 						probe.write(selectedPatient);
 					} catch (PackageException e) {
@@ -303,19 +315,21 @@ public class SysmexAction extends Action implements ComPortListener {
 			_rs232log.log(content);
 		}
 		
-		AbstractData analysisData = null;
+		IProbe analysisProbe = null;
 		String model = CoreHub.localCfg.get(Preferences.MODEL, Preferences.MODEL_KX21);
 		if (Preferences.MODEL_KX21N.equals(model)) {
-			analysisData = new KX21NData();
+			analysisProbe = new KX21NData();
 		} else if (Preferences.MODEL_POCH.equals(model)) {
-			analysisData = new PocH100iData();
+			analysisProbe = new PocH100iData();
+		} else if (Preferences.MODEL_UC1000.equals(model)) {
+			analysisProbe = new UC1000Data();
 		} else {
-			analysisData = new KX21Data();
+			analysisProbe = new KX21Data();
 		}
 		
-		if (content.length() == analysisData.getSize()) {
-			analysisData.parse(content);
-			processProbe(analysisData);
+		if (content.length() == analysisProbe.getSize()) {
+			analysisProbe.parse(content);
+			processProbe(analysisProbe);
 		} else {
 			showError(Messages.SysmexAction_ErrorTitle,
 				Messages.SysmexAction_WrongDataFormat);

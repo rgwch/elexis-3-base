@@ -13,11 +13,14 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.commons.lang.StringUtils;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.program.Program;
 import org.junit.Test;
 
+import at.medevit.elexis.emediplan.core.model.chmed16a.Medicament;
 import at.medevit.elexis.emediplan.core.model.print.Medication;
+import at.medevit.elexis.emediplan.core.test.AllTests;
 import at.medevit.elexis.emediplan.core.test.TestData;
 import ch.elexis.core.data.activator.CoreHub;
 import ch.elexis.core.model.prescription.EntryType;
@@ -35,32 +38,52 @@ public class EMediplanServiceImplTest {
 		List<Patient> patients = TestData.getTestSzenarioInstance().getPatients();
 		Optional<String> jsonString =
 			impl.getJsonString(TestData.getTestSzenarioInstance().getMandator(), patients.get(0),
-				getPatientMedication(patients.get(0)));
+						getPatientMedication(patients.get(0)), false);
 		assertTrue(jsonString.isPresent());
 		assertFalse(jsonString.get().isEmpty());
 		assertTrue(jsonString.get().contains("\"Auth\":\"2000000000002\""));
 		assertTrue(jsonString.get().contains("\"LName\":\"Spitzkiel\""));
 		assertTrue(jsonString.get().contains("7680336700282"));
-		assertTrue(jsonString.get().contains("\"Off\":28800"));
+		assertTrue(jsonString.get().contains("\"D\":[1.0,1.0,1.0,1.0]"));
 		assertTrue(jsonString.get().contains("5390827"));
 		
 		jsonString = impl.getJsonString(TestData.getTestSzenarioInstance().getMandator(),
-			patients.get(1), getPatientMedication(patients.get(1)));
+				patients.get(1), getPatientMedication(patients.get(1)), true);
 		assertTrue(jsonString.isPresent());
 		assertFalse(jsonString.get().isEmpty());
 		assertTrue(jsonString.get().contains("\"LName\":\"Zirbelkiefer\""));
 		assertTrue(jsonString.get().contains("7680336700282"));
-		assertTrue(jsonString.get().contains("\"Off\":28800"));
+		assertTrue(jsonString.get().contains("\"Nm\":\"Dsc\",\"Val\":\"ASPIRIN C Brausetabl 10 Stk\""));
+		assertTrue(jsonString.get().contains("{\"Nm\":\"TkgSch\",\"Val\":\"Cnt\"}"));
 		assertFalse(jsonString.get().contains("5390827"));
 	}
 	
+	@Test
+	public void getModelFromChunk() {
+		EMediplanServiceImpl impl = new EMediplanServiceImpl();
+		List<Patient> patients = TestData.getTestSzenarioInstance().getPatients();
+		Optional<String> jsonString = impl.getJsonString(TestData.getTestSzenarioInstance().getMandator(),
+				patients.get(0), getPatientMedication(patients.get(0)), true);
+		String encodedString = impl.getEncodedJson(jsonString.get());
+		// reload model
+		at.medevit.elexis.emediplan.core.model.chmed16a.Medication model = impl.createModelFromChunk(encodedString);
+		assertNotNull(model);
+		// test medicaments private fields
+		assertEquals(4, model.Medicaments.size());
+		for (Medicament medicament : model.Medicaments) {
+			assertEquals(2, medicament.PFields.size());
+			assertTrue(StringUtils.isNotBlank(impl.getPFieldValue(medicament, "Dsc")));
+			assertTrue(StringUtils.isNotBlank(impl.getPFieldValue(medicament, "TkgSch")));
+		}
+	}
+
 	@Test
 	public void getEncodedJsonString() throws IOException{
 		EMediplanServiceImpl impl = new EMediplanServiceImpl();
 		List<Patient> patients = TestData.getTestSzenarioInstance().getPatients();
 		Optional<String> jsonString =
 			impl.getJsonString(TestData.getTestSzenarioInstance().getMandator(), patients.get(0),
-				getPatientMedication(patients.get(0)));
+						getPatientMedication(patients.get(0)), false);
 		assertTrue(jsonString.isPresent());
 		assertFalse(jsonString.get().isEmpty());
 		String encodedString = impl.getEncodedJson(jsonString.get());
@@ -76,7 +99,7 @@ public class EMediplanServiceImplTest {
 		List<Patient> patients = TestData.getTestSzenarioInstance().getPatients();
 		Optional<String> jsonString =
 			impl.getJsonString(TestData.getTestSzenarioInstance().getMandator(), patients.get(0),
-				getPatientMedication(patients.get(0)));
+						getPatientMedication(patients.get(0)), false);
 		assertTrue(jsonString.isPresent());
 		assertFalse(jsonString.get().isEmpty());
 		String encodedString = impl.getEncodedJson(jsonString.get());
@@ -92,7 +115,7 @@ public class EMediplanServiceImplTest {
 		List<Patient> patients = TestData.getTestSzenarioInstance().getPatients();
 		Optional<String> jsonString =
 			impl.getJsonString(TestData.getTestSzenarioInstance().getMandator(), patients.get(0),
-				getPatientMedication(patients.get(0)));
+						getPatientMedication(patients.get(0)), false);
 		assertTrue(jsonString.isPresent());
 		assertFalse(jsonString.get().isEmpty());
 		String encodedString = impl.getEncodedJson(jsonString.get());
@@ -132,6 +155,22 @@ public class EMediplanServiceImplTest {
 				+ "emediplan_test.pdf");
 		}
 		assertTrue(output.size() > 100);
+	}
+	
+	@Test
+	public void loadNbPackFloat() throws IOException{
+		EMediplanServiceImpl impl = new EMediplanServiceImpl();
+		at.medevit.elexis.emediplan.core.model.chmed16a.Medication model =
+			impl.createModelFromJsonString(AllTests.getAsString("/rsc/NbPack_float.json"));
+		assertNotNull(model);
+	}
+	
+	@Test
+	public void loadNbPackInt() throws IOException{
+		EMediplanServiceImpl impl = new EMediplanServiceImpl();
+		at.medevit.elexis.emediplan.core.model.chmed16a.Medication model =
+			impl.createModelFromJsonString(AllTests.getAsString("/rsc/NbPack_int.json"));
+		assertNotNull(model);
 	}
 	
 	private List<Prescription> getPatientMedication(Patient patient){

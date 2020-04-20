@@ -16,8 +16,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import ch.artikelstamm.elexis.common.ArtikelstammItem;
+import ch.elexis.core.model.prescription.EntryType;
 import ch.elexis.data.Anwender;
 import ch.elexis.data.Artikel;
+import ch.elexis.data.PersistentObject;
 import ch.elexis.data.Prescription;
 import ch.rgw.tools.TimeTool;
 
@@ -33,7 +35,7 @@ public class Medicament {
 	public String Roa;
 	public int Rep;
 	public int Subs;
-	public float NbPack;
+	public int NbPack;
 	public List<PrivateField> PFields;
 	public transient ArtikelstammItem artikelstammItem;
 	public transient String dosis;
@@ -42,11 +44,12 @@ public class Medicament {
 	public transient State state = State.NEW;
 	public transient Prescription foundPrescription;
 	public transient String stateInfo = "";
+	public transient EntryType entryType;
 	
 	public static final String FREETEXT_PREFIX = "[Dosis: ";
 	public static final String FREETEXT_POSTFIX = "]";
 	
-	public static List<Medicament> fromPrescriptions(List<Prescription> prescriptions){
+	public static List<Medicament> fromPrescriptions(List<Prescription> prescriptions, boolean addDesc) {
 		if (prescriptions != null && !prescriptions.isEmpty()) {
 			List<Medicament> ret = new ArrayList<>();
 			for (Prescription prescription : prescriptions) {
@@ -59,10 +62,13 @@ public class Medicament {
 				medicament.IdType = getIdType(article);
 				medicament.Id = getId(article);
 				medicament.Pos = Posology.fromPrescription(prescription);
-				
+				if (addDesc) {
+					addDsc(medicament, article);
+				}
+				addTkgSch(medicament, prescription);
 				// check if it has freetext dosis
 				if (medicament.Pos != null && !medicament.Pos.isEmpty()
-					&& (medicament.Pos.get(0).D == null || medicament.Pos.get(0).D.isEmpty())) {
+						&& (medicament.Pos.get(0).TT == null || medicament.Pos.get(0).TT.isEmpty())) {
 					String freeTextDosis = getDosageAsFreeText(prescription.getDosis());
 					if (freeTextDosis != null) {
 						medicament.AppInstr += (FREETEXT_PREFIX + freeTextDosis + FREETEXT_POSTFIX);
@@ -78,6 +84,49 @@ public class Medicament {
 		return null;
 	}
 	
+	/**
+	 * Add taking scheme private field. Values are:<br/>
+	 * 
+	 * <li>«Prd» (Period): Symptommedikation</li>
+	 * <li>«Cnt» (Continuous): Dauermedikation</li>
+	 * <li>«Ond» (On Demand): Reservemedikation</li>
+	 * 
+	 * @param medicament
+	 * @param prescription
+	 */
+	private static void addTkgSch(Medicament medicament, Prescription prescription) {
+		if (medicament.PFields == null) {
+			medicament.PFields = new ArrayList<>();
+		}
+		PrivateField privateField = new PrivateField();
+		privateField.Nm = "TkgSch";
+		if (prescription.getEntryType() == EntryType.SYMPTOMATIC_MEDICATION) {
+			privateField.Val = "Prd";
+		} else if (prescription.getEntryType() == EntryType.RESERVE_MEDICATION) {
+			privateField.Val = "Ond";
+		} else {
+			privateField.Val = "Cnt";
+		}
+		medicament.PFields.add(privateField);
+	}
+
+	/**
+	 * Add description private field. This field is intended to be used if the id
+	 * can not be resolved.
+	 * 
+	 * @param medicament
+	 * @param article
+	 */
+	private static void addDsc(Medicament medicament, Artikel article) {
+		if (medicament.PFields == null) {
+			medicament.PFields = new ArrayList<>();
+		}
+		PrivateField privateField = new PrivateField();
+		privateField.Nm = "Dsc";
+		privateField.Val = article.getText();
+		medicament.PFields.add(privateField);
+	}
+
 	private static String getDosageAsFreeText(String dosis){
 		if (dosis != null && !dosis.isEmpty()) {
 			String[] signature = Prescription.getSignatureAsStringArray(dosis);
@@ -105,14 +154,15 @@ public class Medicament {
 	
 	private static int getIdType(Artikel article){
 		String gtin = article.getEAN();
-		if (gtin != null && !gtin.isEmpty()) {
+		if (gtin != null && !gtin.isEmpty() && gtin.startsWith("76")) {
 			return 2;
 		}
 		String pharma = article.getPharmaCode();
 		if (pharma == null || pharma.isEmpty()) {
 			pharma = article.get(Artikel.FLD_SUB_ID);
 		}
-		if (pharma != null && !pharma.isEmpty()) {
+		if (pharma != null && !pharma.isEmpty()
+			&& !pharma.startsWith(PersistentObject.MAPPING_ERROR_MARKER)) {
 			return 3;
 		}
 		return 1;
@@ -120,15 +170,19 @@ public class Medicament {
 	
 	private static String getId(Artikel article){
 		String gtin = article.getEAN();
-		if (gtin != null && !gtin.isEmpty()) {
+		if (gtin != null && !gtin.isEmpty() && gtin.startsWith("76")) {
 			return gtin;
 		}
 		String pharma = article.getPharmaCode();
 		if (pharma == null || pharma.isEmpty()) {
 			pharma = article.get(Artikel.FLD_SUB_ID);
 		}
-		if (pharma != null && !pharma.isEmpty()) {
+		if (pharma != null && !pharma.isEmpty()
+			&& !pharma.startsWith(PersistentObject.MAPPING_ERROR_MARKER)) {
 			return pharma;
+		}
+		if (getIdType(article) == 1) {
+			return article.getText();
 		}
 		throw new IllegalStateException(
 			"No ID (GTIN, Pharmacode) for article [" + article.getLabel() + "]");

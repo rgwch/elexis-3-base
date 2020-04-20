@@ -21,7 +21,9 @@ public class Value {
 		"ch.elexis.connect.sysmex.packages.valuetexts_KX21N"; //$NON-NLS-1$
 	private static final String POCH_BUNDLE_NAME =
 		"ch.elexis.connect.sysmex.packages.valuetexts_pocH"; //$NON-NLS-1$
-		
+	private static final String UC1000_BUNDLE_NAME =
+		"ch.elexis.connect.sysmex.packages.valuetexts_UC1000"; //$NON-NLS-1$
+	
 	private final ResourceBundle _bundle;
 	Labor _myLab;
 	String _shortName;
@@ -30,6 +32,10 @@ public class Value {
 	LabItem _labItem;
 	String _refMann;
 	String _refFrau;
+	
+	public static Value getValueUC1000(final String paramName) throws PackageException{
+		return new Value(paramName, UC1000_BUNDLE_NAME);
+	}
 	
 	public static Value getValueKX21(final String paramName) throws PackageException{
 		return new Value(paramName, KX21_BUNDLE_NAME);
@@ -62,14 +68,26 @@ public class Value {
 		}
 	}
 	
-	public void fetchValue(Patient patient, String value, String flags, TimeTool date){
+	public void fetchValue(Patient patient, String value, Integer flags, TimeTool date) {
+		fetchValue(patient, value, flags, date, "");
+	}
+
+	public void fetchValue(Patient patient, String value, Integer flags, TimeTool date, String comment) {
 		if (_labItem == null) {
 			initialize();
 		}
 		
 		LabImportUtil lu = new LabImportUtil();
-		TransientLabResult tLabResult = new TransientLabResult.Builder(new ContactBean(patient),
-			new ContactBean(_myLab), _labItem, value).date(date).build(lu);
+		TransientLabResult tLabResult = null;
+		// do not set flag, pathologic info could be calculated in
+		// TransientLabResult#persist
+		if (flags == -1) {
+			tLabResult = new TransientLabResult.Builder(new ContactBean(patient), new ContactBean(_myLab), _labItem,
+					value).date(date).comment(comment).build(lu);
+		} else {
+			tLabResult = new TransientLabResult.Builder(new ContactBean(patient), new ContactBean(_myLab), _labItem,
+					value).date(date).comment(comment).flags(flags).build(lu);
+		}
 		lu.importLabResults(Collections.singletonList(tLabResult), new DefaultLabImportUiHandler());
 	}
 	
