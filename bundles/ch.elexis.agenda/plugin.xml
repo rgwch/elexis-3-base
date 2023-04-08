@@ -125,7 +125,8 @@
          <command
                id="ch.elexis.agenda.commands.printAppointmentLabel"
                categoryId="ch.elexis.agenda.commands"
-               defaultHandler="ch.elexis.agenda.commands.PrintAppointmentLabelHandler">
+               defaultHandler="ch.elexis.agenda.commands.PrintAppointmentLabelHandler"
+               name="Print Label">
          </command>
       </extension>
       <extension

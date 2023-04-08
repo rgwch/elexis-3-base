@@ -9,7 +9,6 @@ Require-Bundle: org.eclipse.ui,
  ch.rgw.utility,
  ch.elexis.core;bundle-version="3.2.0",
  ch.elexis.core.ui.importer.div;bundle-version="3.2.0",
- ch.elexis.base.ch.diagnosecodes,
  ch.elexis.core.data,
  ch.elexis.core.ui,
  org.slf4j.api

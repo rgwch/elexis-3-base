@@ -10,8 +10,7 @@ Require-Bundle: org.eclipse.ui,
  ch.elexis.core;bundle-version="3.0.0",
  ch.elexis.core.data,
  ch.elexis.core.ui,
- org.eclipse.swt,
- org.apache.servicemix.bundles.zxing;bundle-version="3.0.1"
+ org.eclipse.swt
 Import-Package: org.eclipse.core.databinding,
  org.eclipse.core.databinding.observable.value,
  org.eclipse.core.runtime;version="3.4.0",

@@ -8,7 +8,8 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Eclipse-BundleShape: dir
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.ui,
- org.eclipse.core.expressions;bundle-version="3.6.0"
+ org.eclipse.core.expressions;bundle-version="3.6.0",
+ jaxb-api;bundle-version="2.3.1"
 Import-Package: ch.elexis.agenda.data,
  ch.elexis.agenda.series,
  ch.elexis.agenda.series.ui,

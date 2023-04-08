@@ -8,7 +8,6 @@ import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.apache.commons.io.IOUtils;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
@@ -25,77 +24,75 @@ import ch.elexis.core.jdt.Nullable;
 import ch.elexis.core.ui.importer.div.importers.AccessWrapper;
 import ch.elexis.core.ui.util.SWTHelper;
 import ch.elexis.data.TarmedLeistung;
+import ch.rgw.io.FileTool;
 import ch.rgw.tools.JdbcLink;
 import ch.rgw.tools.JdbcLink.Stm;
 import ch.rgw.tools.TimeTool;
 
 public class TarmedReferenceDataImporter extends AbstractReferenceDataImporter {
 	private static final Logger logger = LoggerFactory.getLogger(TarmedReferenceDataImporter.class);
-	
-	public static final String CFG_REFERENCEINFO_AVAILABLE =
-		"ch.elexis.data.importer.TarmedReferenceDataImporter/referenceinfoavailable";
-	
+
+	public static final String CFG_REFERENCEINFO_AVAILABLE = "ch.elexis.data.importer.TarmedReferenceDataImporter/referenceinfoavailable";
+
 	public static final String ImportPrefix = "TARMED_IMPORT_";
-	
+
 	protected JdbcLink cacheDb = null; // As we have problems parsing dates using the postgresql-JdBC,
 	protected String lang;
-	
+
 	private AccessWrapper aw;
 	private String mdbFilename;
 	private Set<String> cachedDbTables = null;
-	
+
 	protected boolean updateIDs = false;
 	protected boolean showRestartDialog = true;
-	
+
 	protected int chapterCount;
 	protected int servicesCount;
-	
+
 	/**
 	 * Only for unit tests! Suppress dialog at end of import
 	 */
-	public void suppressRestartDialog(){
+	public void suppressRestartDialog() {
 		showRestartDialog = false;
 	}
-	
+
 	@Override
-	public @NonNull Class<?> getReferenceDataTypeResponsibleFor(){
+	public @NonNull Class<?> getReferenceDataTypeResponsibleFor() {
 		return TarmedLeistung.class;
 	}
-	
+
 	@Override
-	public int getCurrentVersion(){
+	public int getCurrentVersion() {
 		return TarmedLeistung.getCurrentVersion(getLaw());
 	}
-	
+
 	@Override
-	public IStatus performImport(@Nullable IProgressMonitor ipm, InputStream input,
-		@Nullable Integer version){
+	public IStatus performImport(@Nullable IProgressMonitor ipm, InputStream input, @Nullable Integer version) {
 		if (ipm == null) {
 			ipm = new NullProgressMonitor();
 		}
-		
+
 		// init database connection
 		cacheDb = new JdbcLink("org.h2.Driver", "jdbc:h2:mem:tarmed_import", "h2");
 		cacheDb.connect("", "");
-		
-		if (openAccessDatabase(input) != Status.OK_STATUS
-			|| deleteCachedAccessTables() != Status.OK_STATUS
-			|| importAllAccessTables() != Status.OK_STATUS) {
+
+		if (openAccessDatabase(input) != Status.OK_STATUS || deleteCachedAccessTables() != Status.OK_STATUS
+				|| importAllAccessTables() != Status.OK_STATUS) {
 			cachedDbTables = null;
 			return Status.CANCEL_STATUS;
 		}
-		
+
 		ipm.beginTask(Messages.TarmedImporter_importLstg, chapterCount + servicesCount);
-		
+
 		lang = JdbcLink.wrap(CoreHub.localCfg.get(Preferences.ABL_LANGUAGE, "d").toUpperCase()); //$NON-NLS-1$
 		ipm.subTask(Messages.TarmedImporter_connecting);
-		
+
 		// always convert ids if there are old ids in the database
 		TarmedLeistung leistung = TarmedLeistung.load("00.0010");
 		if (leistung.exists()) {
 			updateIDs = true;
 		}
-		
+
 		IStatus ret = Status.OK_STATUS;
 		try {
 			DeleteOldData deleteOldData = getDeleteOldData();
@@ -114,8 +111,7 @@ public class TarmedReferenceDataImporter extends AbstractReferenceDataImporter {
 							BlockImporter blockImporter = getBlockImporter();
 							blockImporter.doImport(ipm);
 							if (ret.isOK()) {
-								ServiceImporter serviceImporter =
-									getServiceImporter(chapterImporter);
+								ServiceImporter serviceImporter = getServiceImporter(chapterImporter);
 								serviceImporter.setServiceCount(servicesCount);
 								ret = serviceImporter.doImport(ipm);
 								if (ret.isOK()) {
@@ -128,26 +124,22 @@ public class TarmedReferenceDataImporter extends AbstractReferenceDataImporter {
 										updateBlockResult = idsUpdater.udpateLeistungsBlock(ipm);
 										updateStatistics = idsUpdater.updateStatistics(ipm);
 									}
-									
+
 									if (version == null) {
-										TarmedLeistung.setVersion(
-											new TimeTool().toString(TimeTool.DATE_COMPACT),
-											getLaw());
+										TarmedLeistung.setVersion(new TimeTool().toString(TimeTool.DATE_COMPACT),
+												getLaw());
 									} else {
 										TarmedLeistung.setVersion(version.toString(), getLaw());
 									}
-									CoreHub.globalCfg.set(
-										TarmedReferenceDataImporter.CFG_REFERENCEINFO_AVAILABLE,
-										true);
+									CoreHub.globalCfg.set(TarmedReferenceDataImporter.CFG_REFERENCEINFO_AVAILABLE,
+											true);
 									ipm.done();
 									String message = Messages.TarmedImporter_successMessage;
 									if (!updateBlockResult.isOK()) {
-										message = message + "\n"
-											+ Messages.TarmedImporter_updateBlockWarning;
+										message = message + "\n" + Messages.TarmedImporter_updateBlockWarning;
 									}
 									if (showRestartDialog) {
-										SWTHelper.showInfo(Messages.TarmedImporter_successTitle,
-											message);
+										SWTHelper.showInfo(Messages.TarmedImporter_successTitle, message);
 									}
 								}
 							}
@@ -164,75 +156,81 @@ public class TarmedReferenceDataImporter extends AbstractReferenceDataImporter {
 		}
 		return ret;
 	}
-	
+
 	/**
-	 * Get the {@link BlockImporter} to use, should be overridden for special implementations.
+	 * Get the {@link BlockImporter} to use, should be overridden for special
+	 * implementations.
 	 * 
 	 * @return
 	 */
-	protected BlockImporter getBlockImporter(){
+	protected BlockImporter getBlockImporter() {
 		return new BlockImporter(cacheDb, lang, getLaw());
 	}
-	
+
 	/**
-	 * Get the {@link GroupImporter} to use, should be overridden for special implementations.
+	 * Get the {@link GroupImporter} to use, should be overridden for special
+	 * implementations.
 	 * 
 	 * @return
 	 */
-	protected GroupImporter getGroupImporter(){
+	protected GroupImporter getGroupImporter() {
 		return new GroupImporter(cacheDb, lang, getLaw());
 	}
-	
+
 	/**
-	 * Get the {@link ServiceImporter} to use, should be overridden for special implementations.
+	 * Get the {@link ServiceImporter} to use, should be overridden for special
+	 * implementations.
 	 * 
 	 * @return
 	 */
-	protected ServiceImporter getServiceImporter(ChapterImporter chapterImporter){
+	protected ServiceImporter getServiceImporter(ChapterImporter chapterImporter) {
 		return new ServiceImporter(cacheDb, chapterImporter, lang, getLaw());
 	}
-	
+
 	/**
-	 * Get the {@link ChapterImporter} to use, should be overridden for special implementations.
+	 * Get the {@link ChapterImporter} to use, should be overridden for special
+	 * implementations.
 	 * 
 	 * @return
 	 */
-	protected ChapterImporter getChapterImporter(){
+	protected ChapterImporter getChapterImporter() {
 		return new ChapterImporter(cacheDb, lang, getLaw());
 	}
-	
+
 	/**
-	 * Get the {@link DefinitionImport} to use, should be overridden for special implementations.
+	 * Get the {@link DefinitionImport} to use, should be overridden for special
+	 * implementations.
 	 * 
 	 * @return
 	 */
-	protected DefinitionImport getDefinitionImport(){
+	protected DefinitionImport getDefinitionImport() {
 		return new DefinitionImport(cacheDb, lang, getLaw());
 	}
-	
+
 	/**
-	 * Get the {@link DeleteOldData} to use, should be overridden for special implementations.
+	 * Get the {@link DeleteOldData} to use, should be overridden for special
+	 * implementations.
 	 * 
 	 * @return
 	 */
-	protected DeleteOldData getDeleteOldData(){
+	protected DeleteOldData getDeleteOldData() {
 		return new DeleteOldData(getLaw());
 	}
-	
-	protected String getLaw(){
+
+	protected String getLaw() {
 		return "";
 	}
-	
+
 	/**
 	 * Import all Access tables (using cache cachedDbTables)
 	 */
-	private IStatus importAllAccessTables(){
+	private IStatus importAllAccessTables() {
 		String tablename = "";
 		Iterator<String> iter;
 		try {
 			chapterCount = aw.getDatabase().getTable("KAPITEL_TEXT").getRowCount();
 			servicesCount = aw.getDatabase().getTable("LEISTUNG").getRowCount();
-			
+
 			iter = cachedDbTables.iterator();
 			while (iter.hasNext()) {
 				tablename = iter.next();
@@ -250,8 +248,8 @@ public class TarmedReferenceDataImporter extends AbstractReferenceDataImporter {
 			return Status.CANCEL_STATUS;
 		}
 	}
-	
-	private void createIndexForTable(String tablename, JdbcLink cacheDb){
+
+	private void createIndexForTable(String tablename, JdbcLink cacheDb) {
 		String cacheTableName = ImportPrefix + tablename;
 		if ("LEISTUNG_TEXT".equals(tablename)) {
 			createIndexOn(cacheTableName, "_IDX1", "LNR");
@@ -272,20 +270,18 @@ public class TarmedReferenceDataImporter extends AbstractReferenceDataImporter {
 			createIndexOn(cacheTableName, "_IDX1", "LNR_MASTER");
 		}
 	}
-	
-	private void createIndexOn(String tablename, String indexPrefix, String columnName){
+
+	private void createIndexOn(String tablename, String indexPrefix, String columnName) {
 		Stm stm = cacheDb.getStatement();
 		try {
-			stm.exec("CREATE INDEX " + tablename + indexPrefix + " on " + tablename + " ("
-				+ columnName + ");");
+			stm.exec("CREATE INDEX " + tablename + indexPrefix + " on " + tablename + " (" + columnName + ");");
 		} finally {
 			cacheDb.releaseStatement(stm);
 		}
-		logger.debug(
-			"Created cache db index [" + tablename + indexPrefix + "] on [" + columnName + "]");
+		logger.debug("Created cache db index [" + tablename + indexPrefix + "] on [" + columnName + "]");
 	}
-	
-	private IStatus openAccessDatabase(InputStream inputStream){
+
+	private IStatus openAccessDatabase(InputStream inputStream) {
 		File file = convertInputStreamToFile(inputStream);
 		if (mdbFilename == null)
 			mdbFilename = file.getName();
@@ -299,8 +295,8 @@ public class TarmedReferenceDataImporter extends AbstractReferenceDataImporter {
 		}
 		return Status.OK_STATUS;
 	}
-	
-	private IStatus deleteCachedAccessTables(){
+
+	private IStatus deleteCachedAccessTables() {
 		String tablename = "";
 		Iterator<String> iter;
 		iter = cachedDbTables.iterator();
@@ -310,17 +306,17 @@ public class TarmedReferenceDataImporter extends AbstractReferenceDataImporter {
 		}
 		return Status.OK_STATUS;
 	}
-	
-	private File convertInputStreamToFile(InputStream input){
+
+	private File convertInputStreamToFile(InputStream input) {
 		String prefix = "tarmed_db";
 		String suffix = "tmp";
-		
+
 		File tmpFile = null;
 		try {
 			tmpFile = File.createTempFile(prefix, suffix);
 			tmpFile.deleteOnExit();
 			FileOutputStream out = new FileOutputStream(tmpFile);
-			IOUtils.copy(input, out);
+			FileTool.copyStreams(input, out);
 		} catch (IOException e) {
 			logger.error("Error reading input stream ...", e);
 		}

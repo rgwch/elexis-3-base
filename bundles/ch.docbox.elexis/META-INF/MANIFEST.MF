@@ -17,12 +17,12 @@ Require-Bundle: ch.rgw.utility;bundle-version="2.0.2",
  com.sun.jna;bundle-version="3.0.0",
  ch.elexis.docbox.ws.client,
  ch.elexis.fop.service;bundle-version="3.2.0",
- at.medevit.elexis.ehc.ui;bundle-version="3.0.0"
+ at.medevit.elexis.ehc.ui;bundle-version="3.0.0",
+ jaxb-api;bundle-version="2.3.1"
 Bundle-ClassPath: .,
  rsc/
 Bundle-Localization: plugin
 Bundle-Activator: ch.docbox.elexis.Activator
-Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: ch.docbox.cdach,
  ch.docbox.elexis,
  ch.docbox.ws.cdachservices,

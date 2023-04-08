@@ -12,7 +12,8 @@ Bundle-ActivationPolicy: lazy
 Require-Bundle: at.medevit.elexis.emediplan.core,
  ch.elexis.core.data,
  ch.rgw.utility,
- com.google.code.gson;bundle-version="2.8.0"
+ com.google.code.gson;bundle-version="2.8.0",
+ jaxb-api;bundle-version="2.3.1"
 Bundle-ClassPath: lib/gson-fire-1.8.3.jar,
  lib/okhttp-2.7.5.jar,
  lib/okio-1.6.0.jar,
