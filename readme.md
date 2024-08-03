@@ -1,3 +1,5 @@
+**Note:** This Repository is obsolete as of August 2024. See [Ugrad-2024](https://github.com/rgwch/elexis-ungrad/tree/ungrad-2024) for more informations.
+
 # Elexis Ungrad Base Repository
 
 This is a fork of [Elexis classic base](http://github.com/elexis/elexis-3-base) from the original creator of Elexis.
