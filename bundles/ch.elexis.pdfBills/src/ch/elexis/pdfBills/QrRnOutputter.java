@@ -46,6 +46,7 @@ import org.slf4j.LoggerFactory;
 import ch.elexis.TarmedRechnung.XMLExporter;
 import ch.elexis.TarmedRechnung.XMLExporterUtil;
 import ch.elexis.base.ch.arzttarife.xml.exporter.Tarmed45Exporter.EsrType;
+import ch.elexis.core.data.activator.CoreHub;
 import ch.elexis.core.data.interfaces.IRnOutputter;
 import ch.elexis.core.data.util.ResultAdapter;
 import ch.elexis.core.l10n.Messages;
@@ -434,42 +435,46 @@ public class QrRnOutputter implements IRnOutputter {
 
 		LocalConfigService.set(CFG_ROOT + CFG_MAIL_CPY, false);
 
-			Button bXML = new Button(ret, SWT.PUSH);
-			bXML.setText("XML Verzeichnis");
-			tXml = new Text(ret, SWT.BORDER | SWT.READ_ONLY);
-			tXml.setLayoutData(SWTHelper.getFillGridData(1, true, 1, false));
-			tXml.setText(PreferencesUtil.getOsSpecificPreference(OutputterUtil.CFG_PRINT_GLOBALXMLDIR,
-					ConfigServiceHolder.get()));
-			Button bPDF = new Button(ret, SWT.PUSH);
-			bPDF.setText("PDF Verzeichnis");
-			tPdf = new Text(ret, SWT.BORDER | SWT.READ_ONLY);
-			tPdf.setLayoutData(SWTHelper.getFillGridData(1, true, 1, false));
-			tPdf.setText(PreferencesUtil.getOsSpecificPreference(OutputterUtil.CFG_PRINT_GLOBALPDFDIR,
-					ConfigServiceHolder.get()));
-			bXML.addSelectionListener(new SelectionAdapter() {
-				@Override
-				public void widgetSelected(SelectionEvent e) {
-					DirectoryDialog dd = new DirectoryDialog(compParent.getShell());
-					String dir = dd.open();
-					if (dir != null) {
-						tXml.setText(dir);
-					}
+		Button bXML = new Button(ret, SWT.PUSH);
+		bXML.setText("XML Verzeichnis");
+		tXml = new Text(ret, SWT.BORDER | SWT.READ_ONLY);
+		tXml.setLayoutData(SWTHelper.getFillGridData(1, true, 1, false));
+		String xmldir = PreferencesUtil.getOsSpecificPreference(OutputterUtil.CFG_PRINT_GLOBALXMLDIR,
+				ConfigServiceHolder.get());
+		if (xmldir == null) {
+			xmldir = CoreHub.getTempDir().getAbsolutePath();
+		}
+		tXml.setText(xmldir);
+		Button bPDF = new Button(ret, SWT.PUSH);
+		bPDF.setText("PDF Verzeichnis");
+		tPdf = new Text(ret, SWT.BORDER | SWT.READ_ONLY);
+		tPdf.setLayoutData(SWTHelper.getFillGridData(1, true, 1, false));
+		tPdf.setText(PreferencesUtil.getOsSpecificPreference(OutputterUtil.CFG_PRINT_GLOBALPDFDIR,
+				ConfigServiceHolder.get()));
+		bXML.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				DirectoryDialog dd = new DirectoryDialog(compParent.getShell());
+				String dir = dd.open();
+				if (dir != null) {
+					tXml.setText(dir);
 				}
+			}
 
-			});
-			bPDF.addSelectionListener(new SelectionAdapter() {
-				@Override
-				public void widgetSelected(SelectionEvent e) {
-					DirectoryDialog dd = new DirectoryDialog(compParent.getShell());
-					String dir = dd.open();
-					if (dir != null) {
-						tPdf.setText(dir);
-					}
+		});
+		bPDF.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				DirectoryDialog dd = new DirectoryDialog(compParent.getShell());
+				String dir = dd.open();
+				if (dir != null) {
+					tPdf.setText(dir);
 				}
+			}
 
-			});
-			boolean useGlobalOutputDirs = OutputterUtil.useGlobalOutputDirs();
-			setWidgetsVisible(!useGlobalOutputDirs, bXML, bPDF, tXml, tPdf);
+		});
+		boolean useGlobalOutputDirs = OutputterUtil.useGlobalOutputDirs();
+		setWidgetsVisible(!useGlobalOutputDirs, bXML, bPDF, tXml, tPdf);
 		return ret;
 	}
 
