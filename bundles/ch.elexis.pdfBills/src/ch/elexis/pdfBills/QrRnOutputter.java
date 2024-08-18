@@ -165,7 +165,7 @@ public class QrRnOutputter implements IRnOutputter {
 							errors++;
 							continue;
 						}
-						String fname = OutputterUtil.getXmlOutputDir(CFG_ROOT) + File.separator + invoice.getNumber()
+						String fname =  OutputterUtil.getXmlOutputDir(CFG_ROOT) + File.separator + invoice.getNumber()
 								+ ".xml"; //$NON-NLS-1$
 						try {
 							OutputStream fout = VirtualFilesystemServiceHolder.get().of(fname).openOutputStream();
@@ -449,8 +449,12 @@ public class QrRnOutputter implements IRnOutputter {
 		bPDF.setText("PDF Verzeichnis");
 		tPdf = new Text(ret, SWT.BORDER | SWT.READ_ONLY);
 		tPdf.setLayoutData(SWTHelper.getFillGridData(1, true, 1, false));
-		tPdf.setText(PreferencesUtil.getOsSpecificPreference(OutputterUtil.CFG_PRINT_GLOBALPDFDIR,
-				ConfigServiceHolder.get()));
+		String pdfdir=PreferencesUtil.getOsSpecificPreference(OutputterUtil.CFG_PRINT_GLOBALPDFDIR,
+				ConfigServiceHolder.get());
+		if(pdfdir==null) {
+			pdfdir=CoreHub.getTempDir().getAbsolutePath();
+		}
+		tPdf.setText(pdfdir);
 		bXML.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
