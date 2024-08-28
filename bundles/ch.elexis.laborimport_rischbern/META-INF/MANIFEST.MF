@@ -6,12 +6,7 @@ Bundle-Version: 3.12.0.qualifier
 Bundle-Vendor: elexis.info
 Bundle-Localization: plugin
 Bundle-RequiredExecutionEnvironment: JavaSE-17
-Require-Bundle: ch.elexis.core.l10n,
- org.eclipse.core.runtime,
- org.eclipse.ui,
- org.eclipse.ui.forms,
- ch.rgw.utility,
- ch.elexis.core.ui,
+Require-Bundle: ch.elexis.core.ui,
  ch.elexis.core.ui.importer.div;bundle-version="3.2.0",
  ch.elexis.core.data
 Bundle-ClassPath: .

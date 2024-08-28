@@ -249,8 +249,10 @@ public class ElexisPDFGenerator {
 					if (invoice.isPresent()) {
 						parameters.put("billerLine", getBillerLine(invoice.get())); //$NON-NLS-1$
 						parameters.put("guarantorLine", getGuarantorLine(invoice.get())); //$NON-NLS-1$
-						parameters.put("creditorLine", getCreditorLine(invoice.get())); //$NON-NLS-1$
-						parameters.put("insuranceLine", getInsuranceLine(invoice.get())); //$NON-NLS-1$
+						parameters.put("creditorLine", //$NON-NLS-1$
+								Optional.ofNullable(getCreditorLine(invoice.get())).orElse(StringUtils.EMPTY));
+						parameters.put("insuranceLine", //$NON-NLS-1$
+								Optional.ofNullable(getInsuranceLine(invoice.get())).orElse(StringUtils.EMPTY));
 					} else {
 						parameters.put("billerLine", StringUtils.EMPTY); //$NON-NLS-1$
 						parameters.put("guarantorLine", StringUtils.EMPTY); //$NON-NLS-1$
@@ -440,7 +442,7 @@ public class ElexisPDFGenerator {
 
 				QRBillDataBuilder builder = new QRBillDataBuilder(reloadAsPersonOrOrganization(creditor),
 						invoice.get().getOpenAmount(), "CHF", reloadAsPersonOrOrganization(getDebitor(invoice.get()))) //$NON-NLS-1$
-								.reference(esr.makeRefNr(false)).unstructuredRemark(additionalInformation);
+						.reference(esr.makeRefNr(false)).unstructuredRemark(additionalInformation);
 				try {
 					Optional<String> encodedImage = new QRBillImage(builder.build()).getEncodedImage();
 					if (encodedImage.isPresent()) {
@@ -938,7 +940,7 @@ public class ElexisPDFGenerator {
 	public void setPrint(boolean value) {
 		this.print = value;
 	}
-	
+
 	public boolean isCopy() {
 		return isCopy;
 	}
