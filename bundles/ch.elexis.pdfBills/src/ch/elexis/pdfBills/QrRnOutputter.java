@@ -46,6 +46,7 @@ import org.slf4j.LoggerFactory;
 import ch.elexis.TarmedRechnung.XMLExporter;
 import ch.elexis.TarmedRechnung.XMLExporterUtil;
 import ch.elexis.base.ch.arzttarife.xml.exporter.Tarmed45Exporter.EsrType;
+import ch.elexis.core.constants.Preferences;
 import ch.elexis.core.data.activator.CoreHub;
 import ch.elexis.core.data.interfaces.IRnOutputter;
 import ch.elexis.core.data.util.ResultAdapter;
@@ -158,7 +159,8 @@ public class QrRnOutputter implements IRnOutputter {
 								() -> new IllegalStateException("Could not load invoice [" + rn.getId() + "]"));
 
 						XMLExporter ex = new XMLExporter();
-						Document dRn = ex.doExport(rn, null, type, true);
+						boolean bDoVerify=ConfigServiceHolder.getUser(Preferences.LEISTUNGSCODES_BILLING_STRICT, true);
+						Document dRn = ex.doExport(rn, null, type, bDoVerify);
 						dRn = TarmedXmlUtil.setPrintAtIntermediate(dRn, false);
 						monitor.worked(1);
 						if (invoice.getState() == InvoiceState.DEFECTIVE) {
