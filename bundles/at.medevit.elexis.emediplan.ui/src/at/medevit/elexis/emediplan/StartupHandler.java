@@ -36,8 +36,7 @@ import ch.elexis.core.ui.medication.views.MedicationView;
 public class StartupHandler implements EventHandler {
 	private static Logger logger = LoggerFactory.getLogger(StartupHandler.class);
 
-	private StringBuffer buffer;
-	private boolean bufferStarted;
+	private volatile StringBuffer buffer;
 
 	public static void openEMediplanImportDialog(String chunk, String selectedPatientId) {
 		Medication medication = EMediplanServiceHolder.getService().createModelFromChunk(chunk);
@@ -106,7 +105,7 @@ public class StartupHandler implements EventHandler {
 				BarcodeScannerMessage b = (BarcodeScannerMessage) event.getProperty("org.eclipse.e4.data");
 				if (hasMediplanHeader(b.getChunk())) {
 					chunkBuffer(b);
-				} else if (bufferStarted) {
+				} else if (buffer != null) {
 					chunkBuffer(b);
 				}
 			}
@@ -114,20 +113,30 @@ public class StartupHandler implements EventHandler {
 	}
 
 	private void chunkBuffer(BarcodeScannerMessage message) {
-		if (buffer == null) {
-			buffer = new StringBuffer();
+		synchronized (StartupHandler.this) {
+			if (buffer == null) {
+				logger.info("Start emdiplan buffer"); //$NON-NLS-1$
+				buffer = new StringBuffer();
+				// create timer for buffer
+				new Timer().schedule(new TimerTask() {
+					@Override
+					public void run() {
+						synchronized (StartupHandler.this) {
+							if (buffer != null) {
+								try {
+									logger.info("Import emdiplan buffer [" + buffer.length() + "]"); //$NON-NLS-1$ //$NON-NLS-2$
+									openEMediplanImportDialog(buffer.toString(), null);
+								} finally {
+									buffer = null;
+								}
+							}
+						}
+					}
+				}, 500);
+			}
+			if (buffer != null) {
+				buffer.append(message.getChunk());
+			}
 		}
-		if (!bufferStarted) {
-			bufferStarted = true;
-			new Timer().schedule(new TimerTask() {
-				@Override
-				public void run() {
-					openEMediplanImportDialog(buffer.toString(), null);
-					bufferStarted = false;
-					buffer = null;
-				}
-			}, 500);
-		}
-		buffer.append(message.getChunk());
 	}
 }
