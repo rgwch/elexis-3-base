@@ -378,7 +378,7 @@ public class TardocOptifier implements IBillableOptifier<TardocLeistung> {
 	}
 
 	private void deleteBilled(IBilled billed) {
-		if (!TarmedUtil.getConfigValue(getClass(), IUser.class, Preferences.LEISTUNGSCODES_ALLOWOVERRIDE_STRICT,
+		if (TarmedUtil.getConfigValue(getClass(), IUser.class, Preferences.LEISTUNGSCODES_ALLOWOVERRIDE_STRICT,
 				false)) {
 			CoreModelServiceHolder.get().delete(billed);
 		}
