@@ -88,7 +88,7 @@ public class LagerhaltungArtikelstammLabelProvider extends ArtikelstammLabelProv
 		if (!stockEntries.isEmpty()) {
 			if (mandator.isPresent()) {
 				return Long.valueOf(stockEntries.stream().filter(
-						se -> (se.getStock().getOwner() == null || se.getStock().getOwner().equals(mandator.get())))
+						se -> (se.getStock().getOwner() == null) || (se.getStock().getOwner().getId().equals(mandator.get().getId())))
 						.mapToInt(se -> se.getCurrentStock()).sum());
 			} else {
 				return Long.valueOf(stockEntries.stream().mapToInt(se -> se.getCurrentStock()).sum());
