@@ -57,9 +57,9 @@
 			<xsl:value-of select="OrderNumber" />
 		</fo:block>
 		<fo:block>
-			<xsl:value-of select="FirstName" />
-			&#160;
 			<xsl:value-of select="LastName" />
+			&#160;
+			<xsl:value-of select="FirstName" />
 			&#160;(
 			<xsl:value-of select="Sex" />
 			)
