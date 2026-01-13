@@ -448,7 +448,10 @@ public class XMLExporter implements IRnOutputter {
 
 	private boolean containsTardocOrAllowance(IInvoice invoice) {
 		return invoice.getBilled().stream().filter(b -> "007".equals(b.getBillable().getCodeSystemCode())
-				|| "005".equals(b.getBillable().getCodeSystemCode())).findAny()
+				|| "005".equals(b.getBillable().getCodeSystemCode()) 
+				|| "402".equals(b.getBillable().getCodeSystemCode())
+				|| "406".equals(b.getBillable().getCodeSystemCode())
+				).findAny()
 				.isPresent();
 	}
 
