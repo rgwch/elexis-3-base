@@ -251,6 +251,8 @@ public class ElexisPDFGenerator {
 					parameters.put("besrMarginHorizontal", besrMarginHorizontal); //$NON-NLS-1$
 					parameters.put("headerLine1", getConfigValue(RnOutputter.CFG_ESR_HEADER_1, StringUtils.SPACE)); //$NON-NLS-1$
 					parameters.put("headerLine2", getConfigValue(RnOutputter.CFG_ESR_HEADER_2, StringUtils.SPACE)); //$NON-NLS-1$
+					parameters.put("headerLine3", getConfigValue(RnOutputter.CFG_ESR_HEADER_3, StringUtils.SPACE)); //$NON-NLS-1$
+					parameters.put("patientLabel", getConfigValue(RnOutputter.CFG_PATIENT_LABEL, "PatientIn")); //$NON-NLS-1$
 					parameters.put("messageText", getMessagePDFText(invoiceState));// $NON-NLS-1$
 					parameters.put("eanList", eanList); //$NON-NLS-1$
 					if (StringUtils.isNotBlank(eanTable)) {

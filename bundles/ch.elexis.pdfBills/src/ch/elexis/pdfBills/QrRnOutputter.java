@@ -85,6 +85,7 @@ public class QrRnOutputter implements IRnOutputter {
 
 	public static final String CFG_ESR_HEADER_1 = CFG_ROOT + "esr.header.line1"; //$NON-NLS-1$
 	public static final String CFG_ESR_HEADER_2 = CFG_ROOT + "esr.header.line2"; //$NON-NLS-1$
+	public static final String CFG_ESR_HEADER_3 = CFG_ROOT + "esr.header.line3"; //$NON-NLS-1$
 
 	public static final String CFG_PRINT_DIRECT = CFG_ROOT + "print.direct"; //$NON-NLS-1$
 
@@ -108,6 +109,8 @@ public class QrRnOutputter implements IRnOutputter {
 	public static final String CFG_MSGTEXT_TG_M1 = CFG_ROOT + "pdf.txt.M1tg"; //$NON-NLS-1$
 	public static final String CFG_MSGTEXT_TG_M2 = CFG_ROOT + "pdf.txt.M2tg"; //$NON-NLS-1$
 	public static final String CFG_MSGTEXT_TG_M3 = CFG_ROOT + "pdf.txt.M3tg"; //$NON-NLS-1$
+
+	public static final String CFG_PATIENT_LABEL = CFG_ROOT + "label.patient"; //$NON-NLS-1$
 
 	private Text tXml;
 	private Text tPdf;
