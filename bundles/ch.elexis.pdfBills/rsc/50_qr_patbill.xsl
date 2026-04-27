@@ -114,12 +114,7 @@
 										<xsl:when test="string-length($couvertLeft) > 1">
 											<fo:table-row>
 												<fo:table-cell>
-													<fo:block margin-top="1cm" font-size="10px">
-														<fo:block font-size="7px" margin-bottom="3mm">
-															<xsl:call-template
-																name="patbill_header_line">
-															</xsl:call-template>
-														</fo:block>
+													<fo:block margin-top="15mm" font-size="10px">
 														<xsl:call-template
 															name="patbill_garant_address">
 														</xsl:call-template>
