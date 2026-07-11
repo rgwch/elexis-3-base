@@ -10,6 +10,8 @@
 	<xsl:param name="eanList" select="''" />
 	<xsl:param name="headerLine1" select="''" />
 	<xsl:param name="headerLine2" select="''" />
+	<xsl:param name="headerLine3" select="''" />
+	<xsl:param name="patientLabel" select="'PatientIn'" />
 	<xsl:param name="messageText" select="''" />
 	<xsl:param name="qrJpeg" select="''" />
 	<xsl:param name="guarantorPostal" select="''" />
@@ -133,7 +135,7 @@
 												<fo:table-cell display-align="after">
 													<fo:block margin-top="25mm">
 														<fo:block font-size="7px">
-															PatientIn
+															<xsl:value-of select="$patientLabel" />
 														</fo:block>
 														<xsl:call-template
 															name="patbill_patient_address_50">
@@ -165,7 +167,13 @@
 													</fo:block>
 												</fo:table-cell>
 												<fo:table-cell>
-													<fo:block margin-top="15mm" font-size="10px">
+													<fo:block margin-top="1cm" font-size="10px">
+														<fo:block font-size="7px" margin-bottom="3mm">
+														<xsl:value-of select="$headerLine3" />
+															<xsl:call-template
+																name="patbill_header_line">
+															</xsl:call-template>
+														</fo:block>
 														<xsl:call-template
 															name="patbill_garant_address">
 														</xsl:call-template>
@@ -186,7 +194,7 @@
 												<fo:table-cell display-align="after">
 													<fo:block margin-top="25mm">
 														<fo:block font-size="7px">
-															PatientIn
+															<xsl:value-of select="$patientLabel" />
 														</fo:block>
 														<xsl:call-template
 															name="patbill_patient_address_50">

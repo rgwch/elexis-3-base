@@ -10,6 +10,7 @@
 	<xsl:param name="eanList" select="''" />
 	<xsl:param name="headerLine1" select="''" />
 	<xsl:param name="headerLine2" select="''" />
+	<xsl:param name="headerLine3" select="''" />
 	<xsl:param name="messageText" select="''" />
 	<xsl:param name="qrJpeg" select="''" />
 	<xsl:param name="guarantorPostal" select="''" />
@@ -21,7 +22,8 @@
 	<xsl:param name="amountPrepaid" select="''" />
 	<xsl:template match="invoice:*">
 		<xsl:variable name="pType" select="$printerType" />
-		<fo:root xmlns:fo="http://www.w3.org/1999/XSL/Format"
+		<fo:root
+			xmlns:fo="http://www.w3.org/1999/XSL/Format"
 			font-family="OCRB">
 			<fo:layout-master-set>
 				<!-- margin-right für Abstand Codierzeile-rechter Papierrand. margin-bottom 
@@ -54,18 +56,15 @@
 						<xsl:when
 							test="count(/invoice:request/invoice:payload/invoice:body/invoice:tiers_garant) > 0">
 							<xsl:call-template name="billheader2D">
-								<xsl:with-param name="Type" select="'GSR'">
-								</xsl:with-param>
-								<xsl:with-param name="Title" select="'Patientenrechnung mit QR-Code'">
-								</xsl:with-param>
+								<xsl:with-param name="Type" select="'GSR'"> </xsl:with-param>
+								<xsl:with-param name="Title"
+									select="'Patientenrechnung mit QR-Code'"> </xsl:with-param>
 							</xsl:call-template>
 						</xsl:when>
 						<xsl:otherwise>
 							<xsl:call-template name="billheader2D">
-								<xsl:with-param name="Type" select="'PSR'">
-								</xsl:with-param>
-								<xsl:with-param name="Title" select="'Debitorrechnung mit QR-Code'">
-								</xsl:with-param>
+								<xsl:with-param name="Type" select="'PSR'"> </xsl:with-param>
+								<xsl:with-param name="Title" select="'Debitorrechnung mit QR-Code'"> </xsl:with-param>
 							</xsl:call-template>
 						</xsl:otherwise>
 					</xsl:choose>
@@ -112,7 +111,13 @@
 										<xsl:when test="string-length($couvertLeft) > 1">
 											<fo:table-row>
 												<fo:table-cell>
-													<fo:block margin-top="15mm" font-size="10px">
+													<fo:block margin-top="1cm" font-size="10px">
+														<fo:block font-size="7px"
+															margin-bottom="3mm">
+															<xsl:call-template
+																name="patbill_header_line">
+															</xsl:call-template>
+														</fo:block>
 														<xsl:call-template
 															name="patbill_garant_address">
 														</xsl:call-template>
@@ -143,7 +148,7 @@
 												<fo:table-cell>
 													<fo:block margin-top="5mm">
 														<fo:block font-size="7px">
-															LeistungserbringerIn
+		LeistungserbringerIn
 														</fo:block>
 														<xsl:call-template
 															name="patbill_provider_address_50">
@@ -165,7 +170,14 @@
 													</fo:block>
 												</fo:table-cell>
 												<fo:table-cell>
-													<fo:block margin-top="15mm" font-size="10px">
+													<fo:block margin-top="1cm" font-size="10px">
+														<fo:block font-size="7px"
+															margin-bottom="3mm">
+															<xsl:value-of select="$headerLine3" />
+															<xsl:call-template
+																name="patbill_header_line">
+															</xsl:call-template>
+														</fo:block>
 														<xsl:call-template
 															name="patbill_garant_address">
 														</xsl:call-template>
@@ -176,7 +188,7 @@
 												<fo:table-cell>
 													<fo:block margin-top="5mm">
 														<fo:block font-size="7px">
-															LeistungserbringerIn
+		LeistungserbringerIn
 														</fo:block>
 														<xsl:call-template
 															name="patbill_provider_address_50">
@@ -267,10 +279,9 @@
 				<fo:page-sequence master-reference="Overview">
 					<fo:static-content flow-name="xsl-region-before">
 						<xsl:call-template name="billheader2D">
-							<xsl:with-param name="Type" select="'GSR'">
-							</xsl:with-param>
-							<xsl:with-param name="Title" select="'Leistungsübersicht zur Behandlung'">
-							</xsl:with-param>
+							<xsl:with-param name="Type" select="'GSR'"> </xsl:with-param>
+							<xsl:with-param name="Title"
+								select="'Leistungsübersicht zur Behandlung'"> </xsl:with-param>
 						</xsl:call-template>
 					</fo:static-content>
 					<fo:static-content flow-name="last-footer">
@@ -284,12 +295,12 @@
 					<fo:flow flow-name="xsl-region-body">
 						<fo:block-container height="20mm">
 							<fo:block>
-							<xsl:call-template name="overview_body">
-							</xsl:call-template>
-						</fo:block>
+								<xsl:call-template name="overview_body">
+								</xsl:call-template>
+							</fo:block>
 						</fo:block-container>
 					</fo:flow>
-				</fo:page-sequence>	
+				</fo:page-sequence>
 			</xsl:if>
 		</fo:root>
 	</xsl:template>
