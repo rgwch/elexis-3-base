@@ -6,11 +6,16 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import at.medevit.ch.artikelstamm.ArtikelstammConstants;
 import at.medevit.ch.artikelstamm.ArtikelstammConstants.TYPE;
 import at.medevit.ch.artikelstamm.IArtikelstammItem;
+import at.medevit.ch.artikelstamm.extinfo.ArticleIndicationInfo;
 import at.medevit.ch.artikelstamm.model.common.preference.MargePreference;
 import at.medevit.ch.artikelstamm.model.service.ArtikelstammModelServiceHolder;
 import at.medevit.ch.artikelstamm.model.service.CoreModelServiceHolder;
@@ -39,13 +44,15 @@ import ch.rgw.tools.Money;
 
 public class ArtikelstammItem extends AbstractIdDeleteModelAdapter<ch.elexis.core.jpa.entities.ArtikelstammItem>
 		implements Identifiable, IArtikelstammItem {
-
+	private static final Logger log = LoggerFactory.getLogger(ArtikelstammItem.class);
 	private static final String EXTINFO_VAL_VAT_OVERRIDEN = "VAT_OVERRIDE"; //$NON-NLS-1$
 	private static final String EXTINFO_VAL_PPUB_OVERRIDE_STORE = "PPUB_OVERRIDE_STORE"; //$NON-NLS-1$
 	private static final String EXTINFO_VAL_PKG_SIZE_OVERRIDE_STORE = "PKG_SIZE_OVERRIDE_STORE"; //$NON-NLS-1$
 
 	private static IBillableOptifier<ArtikelstammItem> optifier;
 	private IBillableVerifier verifier;
+
+	private static Gson gson;
 
 	public ArtikelstammItem(ch.elexis.core.jpa.entities.ArtikelstammItem entity) {
 		super(entity);
@@ -68,7 +75,7 @@ public class ArtikelstammItem extends AbstractIdDeleteModelAdapter<ch.elexis.cor
 						billed.setNetPrice(billable.getPurchasePrice());
 						Money sellingPrice = billable.getSellingPrice();
 						if (sellingPrice.isZero()) {
-							sellingPrice = MargePreference.calculateVKP(getPurchasePrice());
+							sellingPrice = MargePreference.calculateVKP(billable.getPurchasePrice());
 						}
 						int vkPreis = sellingPrice.getCents();
 						billed.setPoints(Math.round(vkPreis));
@@ -238,9 +245,17 @@ public class ArtikelstammItem extends AbstractIdDeleteModelAdapter<ch.elexis.cor
 		if (StringUtils.isNotBlank(priceString)) {
 			try {
 				Money value = new Money(priceString);
-				return (isUserDefinedPrice()) ? value.negate() : value;
+				if (!value.isZero()) {
+					return isUserDefinedPrice() ? value.negate() : value;
+				}
 			} catch (ParseException e) {
+				log.error("Failed to parse public price string, falling back to margin calculation. Input: {}",
+						priceString, e);
 			}
+		}
+		Money purchasePrice = getPurchasePrice();
+		if (purchasePrice != null && !purchasePrice.isZero()) {
+			return MargePreference.calculateVKP(purchasePrice);
 		}
 		return new Money();
 	}
@@ -605,4 +620,31 @@ public class ArtikelstammItem extends AbstractIdDeleteModelAdapter<ch.elexis.cor
 	public void setPackageSizeString(String value) {
 		throw new UnsupportedOperationException();
 	}
+
+	@Override
+	public boolean isPm() {
+		return getEntity().isPm();
+	}
+
+	@Override
+	public Optional<ArticleIndicationInfo> getIndicationInfo() {
+		Object indicationsJson = getExtInfo(ArtikelstammConstants.EXTINFO_VAL_INDICATIONS);
+		if (indicationsJson instanceof String && StringUtils.isNotBlank((String) indicationsJson)) {
+			try {
+				ArticleIndicationInfo ret = getGson().fromJson((String) indicationsJson, ArticleIndicationInfo.class);
+				return Optional.of(ret);
+			} catch (Exception e) {
+				LoggerFactory.getLogger(getClass()).error("Invalid JSON", e);
+			}
+		}
+		return Optional.empty();
+	}
+
+	private Gson getGson() {
+		if (gson == null) {
+			gson = new GsonBuilder().create();
+		}
+		return gson;
+	}
+
 }

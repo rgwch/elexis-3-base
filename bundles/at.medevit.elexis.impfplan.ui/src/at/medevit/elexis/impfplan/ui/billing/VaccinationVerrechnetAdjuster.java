@@ -1,6 +1,8 @@
 package at.medevit.elexis.impfplan.ui.billing;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -16,13 +18,19 @@ import ch.elexis.core.model.ICoverage;
 import ch.elexis.core.model.IEncounter;
 import ch.elexis.core.model.IMandator;
 import ch.elexis.core.model.IPatient;
+import ch.elexis.core.model.verrechnet.Constants;
 import ch.elexis.core.services.IBilledAdjuster;
 import ch.elexis.core.services.holder.ContextServiceHolder;
+import ch.elexis.core.services.holder.CoreModelServiceHolder;
 import ch.elexis.core.services.holder.StoreToStringServiceHolder;
 import ch.elexis.core.ui.UiDesk;
 
 @Component
 public class VaccinationVerrechnetAdjuster implements IBilledAdjuster {
+
+	private List<String> vaccineConsultationCodes = List.of("AA.00.0090", "CG.00.0010", "CG.00.0020", "CG.00.0030",
+			"CG.00.0040", "CG.00.0050", "CG.00.0060", "CG.00.0070", "CG.00.0080", "CG.00.0090", "CG.00.0100",
+			"CG.00.0110", "CG.00.0120", "CG.00.0130", "CG.00.0140", "CG.00.0150", "CG.00.0160", "CG.00.0170");
 
 	private ExecutorService executor = Executors.newSingleThreadExecutor();
 
@@ -41,6 +49,11 @@ public class VaccinationVerrechnetAdjuster implements IBilledAdjuster {
 								IPatient patient = coverage.getPatient();
 								if (patient != null) {
 									performVaccination(patient.getId(), (IArticle) billable);
+									Optional<IBilled> vaccineConsultationCode = getVaccineConsultationCode(encounter);
+									if (vaccineConsultationCode.isPresent()) {
+										setFranchiseFree(billed);
+										setFranchiseFree(vaccineConsultationCode.get());
+									}
 								}
 							}
 						}
@@ -74,5 +87,14 @@ public class VaccinationVerrechnetAdjuster implements IBilledAdjuster {
 				}
 			}
 		});
+	}
+
+	private void setFranchiseFree(IBilled billed) {
+		billed.setExtInfo(Constants.FLD_EXT_FRANCHISEFREE, Boolean.TRUE.toString());
+		CoreModelServiceHolder.get().save(billed);
+	}
+
+	private Optional<IBilled> getVaccineConsultationCode(IEncounter encounter) {
+		return encounter.getBilled().stream().filter(b -> vaccineConsultationCodes.contains(b.getCode())).findFirst();
 	}
 }

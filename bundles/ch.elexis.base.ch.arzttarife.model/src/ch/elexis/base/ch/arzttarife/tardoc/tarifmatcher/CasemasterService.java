@@ -34,7 +34,7 @@ import ch.oaat_otma.casemaster.Session;
 @Component(service = CasemasterService.class)
 public class CasemasterService {
 
-	private static final String CAP_ASSIGNMENT_FILENAME = "system_ambP_V11c_260402_cap_assignment.json";
+	private static final String CAP_ASSIGNMENT_FILENAME = "system_ambP_11c_260616_cap_assignment.json";
 	
 	private Casemaster caseMaster;
 
@@ -118,9 +118,12 @@ public class CasemasterService {
 		IBillable billable = billed.getBillable();
 		if (billable != null) {
 			if (billable.getCodeSystemName() != null) {
-				session.addService(
-						new Service(billable.getCode(), getSide(billed), Double.valueOf(billed.getAmount()).intValue(),
-								billed.getEncounter().getDate(), session.number));
+				if (billable.getCodeSystemName().toLowerCase().contains("tardoc")
+						|| billable.getCodeSystemName().toLowerCase().contains("ambulantepauschalen")) {
+					session.addService(new Service(billable.getCode(), getSide(billed),
+							Double.valueOf(billed.getAmount()).intValue(), billed.getEncounter().getDate(),
+							session.number));
+				}
 				if (billable.getCodeSystemName().toLowerCase().contains("tardoc")) {
 					session.addTarpo(new Tarpo(billable.getCode(), billable.getCodeSystemCode(), billed.getAmount(),
 							billed.getEncounter().getDate(), billed.getAmount(), (billed.getPrice().getCents() / 100),

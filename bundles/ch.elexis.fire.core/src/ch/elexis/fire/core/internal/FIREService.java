@@ -45,6 +45,7 @@ import org.osgi.service.component.annotations.Reference;
 import org.slf4j.LoggerFactory;
 
 import ch.elexis.core.findings.ICondition;
+import ch.elexis.core.findings.ICondition.ConditionCategory;
 import ch.elexis.core.findings.IFindingsService;
 import ch.elexis.core.findings.util.ModelUtil;
 import ch.elexis.core.findings.util.fhir.IFhirTransformer;
@@ -54,6 +55,7 @@ import ch.elexis.core.model.IEncounter;
 import ch.elexis.core.model.ILabResult;
 import ch.elexis.core.model.IMandator;
 import ch.elexis.core.model.IPatient;
+import ch.elexis.core.model.IPerson;
 import ch.elexis.core.model.IPrescription;
 import ch.elexis.core.model.ISickCertificate;
 import ch.elexis.core.model.IVaccination;
@@ -63,6 +65,7 @@ import ch.elexis.core.services.IModelService;
 import ch.elexis.core.services.IQuery;
 import ch.elexis.core.services.IQuery.COMPARATOR;
 import ch.elexis.core.services.IQueryCursor;
+import ch.elexis.core.services.holder.ConfigServiceHolder;
 import ch.elexis.core.utils.CoreUtil;
 import ch.elexis.fire.core.IFIREService;
 
@@ -90,7 +93,7 @@ public class FIREService implements IFIREService {
 
 	private IFhirTransformer<Encounter, IEncounter> encounterTransformer;
 
-	private IFhirTransformer<Practitioner, IMandator> mandatorTransformer;
+	private IFhirTransformer<Practitioner, IPerson> mandatorTransformer;
 
 	private IFhirTransformer<Observation, ILabResult> labTransformer;
 
@@ -119,9 +122,9 @@ public class FIREService implements IFIREService {
 		return encounterTransformer;
 	}
 
-	private IFhirTransformer<Practitioner, IMandator> getMandatorTransformer() {
+	private IFhirTransformer<Practitioner, IPerson> getMandatorTransformer() {
 		if(mandatorTransformer == null) {
-			mandatorTransformer = transformerRegistry.getTransformerFor(Practitioner.class, IMandator.class);
+			mandatorTransformer = transformerRegistry.getTransformerFor(Practitioner.class, IPerson.class);
 		}
 		return mandatorTransformer;
 	}
@@ -217,18 +220,22 @@ public class FIREService implements IFIREService {
 		List<IEncounter> encounters = patient.getCoverages().stream().flatMap(c -> c.getEncounters().stream())
 				.collect(Collectors.toList());
 		encounters.stream().forEach(ie -> {
-			Encounter fhirEncounter = getEncounterTransformer().getFhirObject(ie).orElse(null);
-			if (fhirEncounter != null) {
-				if (ie.getMandator() != null) {
-					addMandatorToBundle(ie.getMandator(), ret);
-					if (ie.getMandator().getBiller().isPerson() && ie.getMandator().getBiller().isMandator()
-							&& !ie.getMandator().equals(ie.getMandator().getBiller())) {
-						IContact biller = ie.getMandator().getBiller();
-						addMandatorToBundle(coreModelService.load(biller.getId(), IMandator.class).get(), ret);
+			try {
+				Encounter fhirEncounter = getEncounterTransformer().getFhirObject(ie).orElse(null);
+				if (fhirEncounter != null) {
+					if (ie.getMandator() != null) {
+						addMandatorToBundle(ie.getMandator(), ret);
+						if (ie.getMandator().getBiller().isPerson() && ie.getMandator().getBiller().isMandator()
+								&& !ie.getMandator().equals(ie.getMandator().getBiller())) {
+							IContact biller = ie.getMandator().getBiller();
+							addMandatorToBundle(coreModelService.load(biller.getId(), IMandator.class).get(), ret);
+						}
 					}
+					toFIRE(fhirEncounter);
+					patientBundle.addEntry().setResource(fhirEncounter);
 				}
-				toFIRE(fhirEncounter);
-				patientBundle.addEntry().setResource(fhirEncounter);
+			} catch (Exception e) {
+				LoggerFactory.getLogger(getClass()).error("Exception adding encounter", e);
 			}
 		});
 		
@@ -237,6 +244,14 @@ public class FIREService implements IFIREService {
 			Condition fhirCondition = (Condition) ModelUtil.getAsResource(c.getRawContent());
 			patientBundle.addEntry().setResource(fhirCondition);
 		});
+
+		if (isLegacyPatientCondition()) {
+			Optional<ICondition> legacyCondition = getLegacyPatientCondition(patient);
+			if (legacyCondition.isPresent()) {
+				Condition fhirCondition = (Condition) ModelUtil.getAsResource(legacyCondition.get().getRawContent());
+				patientBundle.addEntry().setResource(fhirCondition);
+			}
+		}
 
 		IQuery<ILabResult> resultQuery = coreModelService.getQuery(ILabResult.class);
 		resultQuery.and(ModelPackage.Literals.ILAB_RESULT__PATIENT, COMPARATOR.EQUALS, patient);
@@ -282,7 +297,7 @@ public class FIREService implements IFIREService {
 	private void addMandatorToBundle(IMandator mandator, Bundle ret) {
 		Optional<BundleEntryComponent> found = findBundleEntry(mandator.getId(), ret);
 		if (found.isEmpty()) {
-			Optional<Practitioner> fhirPractitioner = getMandatorTransformer().getFhirObject(mandator);
+			Optional<Practitioner> fhirPractitioner = getMandatorTransformer().getFhirObject(mandator.asIPerson());
 			fhirPractitioner.ifPresent(p -> ret.addEntry().setResource(toFIRE(p)));
 		}
 	}
@@ -350,42 +365,42 @@ public class FIREService implements IFIREService {
 			clearExportDirectory();
 			BundleFile currentBundle = getBundleFile(false);
 
-			List<IPatient> changedPatients = getChanged(lastExportTimestamp, IPatient.class);
+			IQueryCursor<IPatient> changedPatients = getChanged(lastExportTimestamp, IPatient.class);
 			currentBundle = addIncrementalPatients(changedPatients, currentBundle, ret);
 			if (progressMonitor.isCanceled()) {
 				LoggerFactory.getLogger(getClass()).warn("Cancelled incremental export");
 				return Collections.emptyList();
 			}
 
-			List<IEncounter> changedEncounters = getChanged(lastExportTimestamp, IEncounter.class);
+			IQueryCursor<IEncounter> changedEncounters = getChanged(lastExportTimestamp, IEncounter.class);
 			currentBundle = addIncrementalEncounters(changedEncounters, currentBundle, ret);
 			if (progressMonitor.isCanceled()) {
 				LoggerFactory.getLogger(getClass()).warn("Cancelled incremental export");
 				return Collections.emptyList();
 			}
 
-			List<ICondition> changedConditions = getChangedFindings(lastExportTimestamp, ICondition.class);
+			IQueryCursor<ICondition> changedConditions = getChangedFindings(lastExportTimestamp, ICondition.class);
 			currentBundle = addIncrementalConditions(changedConditions, currentBundle, ret);
 			if (progressMonitor.isCanceled()) {
 				LoggerFactory.getLogger(getClass()).warn("Cancelled incremental export");
 				return Collections.emptyList();
 			}
 
-			List<IPrescription> changedPrescriptions = getChanged(lastExportTimestamp, IPrescription.class);
+			IQueryCursor<IPrescription> changedPrescriptions = getChanged(lastExportTimestamp, IPrescription.class);
 			currentBundle = addIncrementalPrescriptions(changedPrescriptions, currentBundle, ret);
 			if (progressMonitor.isCanceled()) {
 				LoggerFactory.getLogger(getClass()).warn("Cancelled incremental export");
 				return Collections.emptyList();
 			}
 
-			List<ILabResult> changedLabResults = getChanged(lastExportTimestamp, ILabResult.class);
+			IQueryCursor<ILabResult> changedLabResults = getChanged(lastExportTimestamp, ILabResult.class);
 			currentBundle = addIncrementalLabResult(changedLabResults, currentBundle, ret);
 			if (progressMonitor.isCanceled()) {
 				LoggerFactory.getLogger(getClass()).warn("Cancelled incremental export");
 				return Collections.emptyList();
 			}
 
-			List<IVaccination> changedVaccinations = getChanged(lastExportTimestamp, IVaccination.class);
+			IQueryCursor<IVaccination> changedVaccinations = getChanged(lastExportTimestamp, IVaccination.class);
 			currentBundle = addIncrementalVaccination(changedVaccinations, currentBundle, ret);
 			if (progressMonitor.isCanceled()) {
 				LoggerFactory.getLogger(getClass()).warn("Cancelled incremental export");
@@ -402,9 +417,11 @@ public class FIREService implements IFIREService {
 		return ret;
 	}
 
-	private BundleFile addIncrementalPatients(List<IPatient> changedPatients, BundleFile currentBundle, List<File> ret)
-			throws IOException {
-		for (IPatient iPatient : changedPatients) {
+	private BundleFile addIncrementalPatients(IQueryCursor<IPatient> changedPatients, BundleFile currentBundle,
+			List<File> ret) throws IOException {
+		boolean isLegacyPatientCondition = isLegacyPatientCondition();
+		while (changedPatients.hasNext()) {
+			IPatient iPatient = changedPatients.next();
 			if (iPatient.getDateOfBirth() != null) {
 				Bundle patientBundle = getOrCreatePatientBundle(getFIREPatientId(iPatient.getId()),
 						currentBundle.getBundle());
@@ -412,86 +429,110 @@ public class FIREService implements IFIREService {
 				if (fhirPatient.isPresent()) {
 					toFIRE(fhirPatient.get());
 					currentBundle.addResourceToBundle(patientBundle, fhirPatient.get());
-				}
-				currentBundle = currentBundle.writeIfNecessary(ret);
-			}
-		}
-		return currentBundle;
-	}
-
-	private BundleFile addIncrementalEncounters(List<IEncounter> changedEncounters, BundleFile currentBundle,
-			List<File> ret) throws IOException {
-		for (IEncounter en : changedEncounters) {
-			Bundle patientBundle = getOrCreatePatientBundle(getFIREPatientId(en.getPatient().getId()),
-					currentBundle.getBundle());
-			Optional<Encounter> fhirEncounter = getEncounterTransformer().getFhirObject(en);
-			if (fhirEncounter.isPresent()) {
-				if (en.getMandator() != null) {
-					addMandatorToBundle(en.getMandator(), currentBundle.getBundle());
-					if (en.getMandator().getBiller().isPerson() && en.getMandator().getBiller().isMandator()
-							&& !en.getMandator().equals(en.getMandator().getBiller())) {
-						IContact biller = en.getMandator().getBiller();
-						addMandatorToBundle(coreModelService.load(biller.getId(), IMandator.class).get(),
-								currentBundle.getBundle());
+					if (isLegacyPatientCondition) {
+						Optional<ICondition> legacyCondition = getLegacyPatientCondition(iPatient);
+						if (legacyCondition.isPresent()) {
+							Condition fhirCondition = (Condition) ModelUtil
+									.getAsResource(legacyCondition.get().getRawContent());
+							currentBundle.addResourceToBundle(patientBundle, fhirCondition);
+						}
 					}
 				}
-				toFIRE(fhirEncounter.get());
-				currentBundle.addResourceToBundle(patientBundle, fhirEncounter.get());
-			}
-			currentBundle = currentBundle.writeIfNecessary(ret);
-		}
-		return currentBundle;
-	}
-
-	private BundleFile addIncrementalConditions(List<ICondition> changedConditions, BundleFile currentBundle,
-			List<File> ret) throws IOException {
-		for (ICondition co : changedConditions) {
-			Bundle patientBundle = getOrCreatePatientBundle(getFIREPatientId(co.getPatientId()),
-					currentBundle.getBundle());
-			Condition fhirCondition = (Condition) ModelUtil.getAsResource(co.getRawContent());
-			currentBundle.addResourceToBundle(patientBundle, fhirCondition);
-			currentBundle = currentBundle.writeIfNecessary(ret);
-		}
-		return currentBundle;
-	}
-
-	private BundleFile addIncrementalPrescriptions(List<IPrescription> changedPrescriptions, BundleFile currentBundle,
-			List<File> ret) throws IOException {
-		for (IPrescription pr : changedPrescriptions) {
-			Bundle patientBundle = getOrCreatePatientBundle(getFIREPatientId(pr.getPatient().getId()),
-					currentBundle.getBundle());
-			Optional<MedicationRequest> mr = getPrescriptionTransformer().getFhirObject(pr);
-			if (mr.isPresent()) {
-				currentBundle.addResourceToBundle(patientBundle, mr.get());
 				currentBundle = currentBundle.writeIfNecessary(ret);
 			}
 		}
 		return currentBundle;
 	}
 
-	private BundleFile addIncrementalLabResult(List<ILabResult> changedLabResults, BundleFile currentBundle,
+	private BundleFile addIncrementalEncounters(IQueryCursor<IEncounter> changedEncounters, BundleFile currentBundle,
 			List<File> ret) throws IOException {
-		for (ILabResult lr : changedLabResults) {
-			Bundle patientBundle = getOrCreatePatientBundle(getFIREPatientId(lr.getPatient().getId()),
-					currentBundle.getBundle());
-			Optional<Observation> ob = getLabTransformer().getFhirObject(lr);
-			if (ob.isPresent()) {
-				currentBundle.addResourceToBundle(patientBundle, ob.get());
+		while (changedEncounters.hasNext()) {
+			IEncounter en = changedEncounters.next();
+			if (en.getPatient() != null) {
+				Bundle patientBundle = getOrCreatePatientBundle(getFIREPatientId(en.getPatient().getId()),
+						currentBundle.getBundle());
+				Optional<Encounter> fhirEncounter = getEncounterTransformer().getFhirObject(en);
+				if (fhirEncounter.isPresent()) {
+					if (en.getMandator() != null) {
+						addMandatorToBundle(en.getMandator(), currentBundle.getBundle());
+						if (en.getMandator().getBiller().isPerson() && en.getMandator().getBiller().isMandator()
+								&& !en.getMandator().equals(en.getMandator().getBiller())) {
+							IContact biller = en.getMandator().getBiller();
+							addMandatorToBundle(coreModelService.load(biller.getId(), IMandator.class).get(),
+									currentBundle.getBundle());
+						}
+					}
+					toFIRE(fhirEncounter.get());
+					currentBundle.addResourceToBundle(patientBundle, fhirEncounter.get());
+				}
 				currentBundle = currentBundle.writeIfNecessary(ret);
 			}
 		}
 		return currentBundle;
 	}
 
-	private BundleFile addIncrementalVaccination(List<IVaccination> changedVaccinations, BundleFile currentBundle,
+	private BundleFile addIncrementalConditions(IQueryCursor<ICondition> changedConditions, BundleFile currentBundle,
 			List<File> ret) throws IOException {
-		for (IVaccination va : changedVaccinations) {
-			Bundle patientBundle = getOrCreatePatientBundle(getFIREPatientId(va.getPatient().getId()),
-					currentBundle.getBundle());
-			Optional<Immunization> im = getVaccinationTransformer().getFhirObject(va);
-			if (im.isPresent()) {
-				currentBundle.addResourceToBundle(patientBundle, im.get());
+		while (changedConditions.hasNext()) {
+			ICondition co = changedConditions.next();
+			if (StringUtils.isNotBlank(co.getPatientId())) {
+				Bundle patientBundle = getOrCreatePatientBundle(getFIREPatientId(co.getPatientId()),
+						currentBundle.getBundle());
+				Condition fhirCondition = (Condition) ModelUtil.getAsResource(co.getRawContent());
+				currentBundle.addResourceToBundle(patientBundle, fhirCondition);
 				currentBundle = currentBundle.writeIfNecessary(ret);
+			}
+		}
+		return currentBundle;
+	}
+
+	private BundleFile addIncrementalPrescriptions(IQueryCursor<IPrescription> changedPrescriptions,
+			BundleFile currentBundle, List<File> ret) throws IOException {
+		while (changedPrescriptions.hasNext()) {
+			IPrescription pr = changedPrescriptions.next();
+			if (pr.getPatient() != null) {
+				Bundle patientBundle = getOrCreatePatientBundle(getFIREPatientId(pr.getPatient().getId()),
+						currentBundle.getBundle());
+				Optional<MedicationRequest> mr = getPrescriptionTransformer().getFhirObject(pr);
+				if (mr.isPresent()) {
+					currentBundle.addResourceToBundle(patientBundle, mr.get());
+					currentBundle = currentBundle.writeIfNecessary(ret);
+				}
+			}
+		}
+		return currentBundle;
+	}
+
+	private BundleFile addIncrementalLabResult(IQueryCursor<ILabResult> changedLabResults, BundleFile currentBundle,
+			List<File> ret) throws IOException {
+		while (changedLabResults.hasNext()) {
+			ILabResult lr = changedLabResults.next();
+			if (lr.getPatient() != null) {
+				Bundle patientBundle = getOrCreatePatientBundle(getFIREPatientId(lr.getPatient().getId()),
+						currentBundle.getBundle());
+				Optional<Observation> ob = getLabTransformer().getFhirObject(lr);
+				if (ob.isPresent()) {
+					currentBundle.addResourceToBundle(patientBundle, ob.get());
+					currentBundle = currentBundle.writeIfNecessary(ret);
+				}
+			}
+		}
+		return currentBundle;
+	}
+
+	private BundleFile addIncrementalVaccination(IQueryCursor<IVaccination> changedVaccinations,
+			BundleFile currentBundle,
+			List<File> ret) throws IOException {
+		while (changedVaccinations.hasNext()) {
+			IVaccination va = changedVaccinations.next();
+			if (va.getPatient() != null) {
+				Bundle patientBundle = getOrCreatePatientBundle(getFIREPatientId(va.getPatient().getId()),
+						currentBundle.getBundle());
+				Optional<Immunization> im = getVaccinationTransformer().getFhirObject(va);
+				if (im.isPresent()) {
+					currentBundle.addResourceToBundle(patientBundle, im.get());
+					currentBundle = currentBundle.writeIfNecessary(ret);
+				}
 			}
 		}
 		return currentBundle;
@@ -499,7 +540,7 @@ public class FIREService implements IFIREService {
 
 	protected Bundle getPatientBundle(String firePatientId, Bundle exportBundle) {
 		for (BundleEntryComponent entry : exportBundle.getEntry()) {
-			if (entry.getResource() != null && firePatientId.equals(entry.getResource().getId())) {
+			if (entry.getResource() != null && firePatientId.equals(entry.getResource().getIdPart())) {
 				return (Bundle) entry.getResource();
 			}
 		}
@@ -518,17 +559,17 @@ public class FIREService implements IFIREService {
 	}
 
 	@SuppressWarnings("unchecked")
-	private <T> List<T> getChanged(Long lastExportTimestamp, Class<T> clazz) {
+	private <T> IQueryCursor<T> getChanged(Long lastExportTimestamp, Class<T> clazz) {
 		IQuery<T> query = coreModelService.getQuery(clazz);
 		query.and("lastupdate", COMPARATOR.GREATER, Long.valueOf(lastExportTimestamp)); //$NON-NLS-1$
-		return (List<T>) (List<?>) query.execute();
+		return query.executeAsCursor();
 	}
 
 	@SuppressWarnings("unchecked")
-	private <T> List<T> getChangedFindings(Long lastExportTimestamp, Class<T> clazz) {
+	private <T> IQueryCursor<T> getChangedFindings(Long lastExportTimestamp, Class<T> clazz) {
 		IQuery<T> query = findingsModelService.getQuery(clazz);
 		query.and("lastupdate", COMPARATOR.GREATER, Long.valueOf(lastExportTimestamp)); //$NON-NLS-1$
-		return (List<T>) (List<?>) query.execute();
+		return query.executeAsCursor();
 	}
 
 	private BundleFile getBundleFile(boolean initial) throws UnsupportedEncodingException {
@@ -640,6 +681,23 @@ public class FIREService implements IFIREService {
 		return "elexis_00" + getPracticeIdentifier() + "_"
 				+ StringUtils.leftPad(Integer.toString(getBundleCount()), 6, "0")
 				+ "_" + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+	}
+
+	private boolean isLegacyPatientCondition() {
+		boolean useStructured = ConfigServiceHolder.get().get("diagnose/settings/useStructured", false);
+		return !useStructured;
+	}
+
+	private Optional<ICondition> getLegacyPatientCondition(IPatient patient) {
+		String diagnosis = patient.getDiagnosen();
+		if (diagnosis != null && !diagnosis.isEmpty()) {
+			ICondition condition = findingsService.create(ICondition.class);
+			condition.setPatientId(patient.getId());
+			condition.setCategory(ConditionCategory.PROBLEMLISTITEM);
+			condition.setText(diagnosis);
+			return Optional.of(condition);
+		}
+		return Optional.empty();
 	}
 
 	@Override

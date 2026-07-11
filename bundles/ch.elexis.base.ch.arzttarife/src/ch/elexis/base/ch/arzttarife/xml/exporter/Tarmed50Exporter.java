@@ -10,7 +10,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -38,6 +37,7 @@ import ch.elexis.TarmedRechnung.TarmedACL;
 import ch.elexis.TarmedRechnung.XMLExporter;
 import ch.elexis.TarmedRechnung.XMLExporterProcessing;
 import ch.elexis.TarmedRechnung.XMLExporterUtil;
+import ch.elexis.base.ch.arzttarife.ambulatory.IAmbulatoryAllowance;
 import ch.elexis.base.ch.arzttarife.importer.TrustCenters;
 import ch.elexis.base.ch.arzttarife.rfe.IReasonForEncounter;
 import ch.elexis.base.ch.arzttarife.tardoc.ITardocLeistung;
@@ -164,10 +164,6 @@ public class Tarmed50Exporter {
 	private ICodingContribution sectionCodeContribution;
 
 	private boolean addTrustCenterInstructions = false;
-
-	private List<String> vaccineConsultationCodes = List.of("AA.00.0090", "CG.00.0010", "CG.00.0020", "CG.00.0030",
-			"CG.00.0040", "CG.00.0050", "CG.00.0060", "CG.00.0070", "CG.00.0080", "CG.00.0090", "CG.00.0100",
-			"CG.00.0110", "CG.00.0120", "CG.00.0130", "CG.00.0140", "CG.00.0150", "CG.00.0160", "CG.00.0170");
 
 	/**
 	 * Create a tarmed invoice request model for the {@link IInvoice}, and marshall
@@ -748,7 +744,6 @@ public class Tarmed50Exporter {
 
 			boolean bRFE = false; // RFE already encoded
 
-			List<IBilled> franchiseFree = getFranchiseFree(encounterBilled);
 			try {
 				for (IBilled billed : encounterBilled) {
 					IBillable billable = billed.getBillable();
@@ -764,7 +759,7 @@ public class Tarmed50Exporter {
 
 						String bezug = getBezug(billable);
 						if (StringTool.isNothing(bezug)) {
-							bezug = (String) billed.getExtInfo("Bezug"); //$NON-NLS-1$
+							bezug = (String) billed.getExtInfo(Constants.FLD_EXT_REALTION); // $NON-NLS-1$
 						}
 						if (!StringTool.isNothing(bezug)) {
 							serviceExType.setRefCode(bezug);
@@ -832,7 +827,7 @@ public class Tarmed50Exporter {
 
 						sectionCode.ifPresent(c -> serviceExType.setSectionCode(c));
 
-						if (!franchiseFree.isEmpty() && franchiseFree.contains(billed)) {
+						if (StringUtils.isNotBlank((String) billed.getExtInfo(Constants.FLD_EXT_FRANCHISEFREE))) {
 							// Bit 2 (0x000002) franchiseFree
 							serviceExType.setServiceAttributes(serviceExType.getServiceAttributes() | 0x000002);
 						}
@@ -878,6 +873,14 @@ public class Tarmed50Exporter {
 							serviceType.setXtraDrug(drugType);
 						}
 						if ("005".equals(billable.getCodeSystemCode())) {
+							String capitulum = getCapitulum(billable);
+							if (StringUtils.isNotBlank(capitulum)) {
+								XtraServiceType xtraServiceType = new XtraServiceType();
+								xtraServiceType.setToken("Capitulum");
+								xtraServiceType.setValue(capitulum);
+								serviceType.getXtraService().add(xtraServiceType);
+							}
+
 							List<IDiagnosisReference> diagnoses = billed.getEncounter().getDiagnoses();
 							List<IDiagnosisReference> icd10Diagnoses = diagnoses.stream()
 									.filter(d -> d.getCodeSystemName().toLowerCase().contains("icd")).toList();
@@ -927,7 +930,7 @@ public class Tarmed50Exporter {
 							sectionCode.ifPresent(c -> serviceType.setSectionCode(c));
 						}
 
-						if (!franchiseFree.isEmpty() && franchiseFree.contains(billed)) {
+						if (StringUtils.isNotBlank((String) billed.getExtInfo(Constants.FLD_EXT_FRANCHISEFREE))) {
 							// Bit 2 (0x000002) franchiseFree
 							serviceType.setServiceAttributes(serviceType.getServiceAttributes() | 0x000002);
 						}
@@ -980,22 +983,15 @@ public class Tarmed50Exporter {
 		return servicesType;
 	}
 
-	private List<IBilled> getFranchiseFree(List<IBilled> encounterBilled) {
-		List<IBilled> vaccinations = encounterBilled.stream()
-				.filter(billed -> billed.getBillable() instanceof IArticle
-						&& ((IArticle) billed.getBillable()).isVaccination()
-						&& StringUtils.isBlank((String) billed.getExtInfo(Constants.FLD_EXT_NOFRANCHISEFREE)))
-				.toList();
-		if (!vaccinations.isEmpty()) {
-			Optional<IBilled> vaccineConsultationService = encounterBilled.stream()
-					.filter(b -> vaccineConsultationCodes.contains(b.getCode())).findFirst();
-			if (vaccineConsultationService.isPresent()) {
-				List<IBilled> ret = new ArrayList<IBilled>(vaccinations);
-				ret.add(vaccineConsultationService.get());
-				return ret;
+	private String getCapitulum(IBillable billable) {
+		if (billable instanceof IAmbulatoryAllowance) {
+			String ret = ((IAmbulatoryAllowance) billable).getChapter();
+			if (ret.indexOf(" - ") != -1) {
+				ret = ret.substring(0, ret.indexOf(" - "));
 			}
+			return ret;
 		}
-		return Collections.emptyList();
+		return null;
 	}
 
 	private Optional<String> getSectionCode(IMandator mandator) {
@@ -1044,9 +1040,9 @@ public class Tarmed50Exporter {
 
 	private String getBezug(IBillable billable) {
 		if (billable instanceof ITarmedLeistung) {
-			return (String) ((ITarmedLeistung) billable).getExtension().getExtInfo("Bezug"); //$NON-NLS-1$
+			return (String) ((ITarmedLeistung) billable).getExtension().getExtInfo(Constants.FLD_EXT_REALTION); // $NON-NLS-1$
 		} else if (billable instanceof ITardocLeistung) {
-			return (String) ((ITardocLeistung) billable).getExtension().getExtInfo("Bezug"); //$NON-NLS-1$
+			return (String) ((ITardocLeistung) billable).getExtension().getExtInfo(Constants.FLD_EXT_REALTION); // $NON-NLS-1$
 		}
 		return StringUtils.EMPTY;
 	}
