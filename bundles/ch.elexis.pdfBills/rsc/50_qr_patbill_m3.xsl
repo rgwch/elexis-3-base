@@ -194,9 +194,6 @@
 													</fo:block>
 												</fo:table-cell>
 												<fo:table-cell>
-<<<<<<< HEAD
-													<fo:block margin-top="15mm" font-size="10px">
-=======
 													<fo:block margin-top="1cm" font-size="10px">
 														<fo:block font-size="7px"
 															margin-bottom="3mm">
@@ -205,7 +202,6 @@
 																name="patbill_header_line">
 															</xsl:call-template>
 														</fo:block>
->>>>>>> 78ed1a44a30d1a441ed2804d9eb68f2a60ca33a8
 														<xsl:call-template
 															name="patbill_garant_address">
 														</xsl:call-template>

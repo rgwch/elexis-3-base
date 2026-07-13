@@ -87,13 +87,8 @@ public class LagerhaltungArtikelstammLabelProvider extends ArtikelstammLabelProv
 				.findAllStockEntriesForArticle(StoreToStringServiceHolder.getStoreToString(ai));
 		if (!stockEntries.isEmpty()) {
 			if (mandator.isPresent()) {
-<<<<<<< HEAD
-				return Long.valueOf(stockEntries.stream().filter(se -> (se.getStock().getOwner() == null
-								|| se.getStock().getOwner().getId().equals(mandator.get().getId())))
-=======
 				return Long.valueOf(stockEntries.stream().filter(
 						se -> (se.getStock().getOwner() == null) || (se.getStock().getOwner().getId().equals(mandator.get().getId())))
->>>>>>> 78ed1a44a30d1a441ed2804d9eb68f2a60ca33a8
 						.mapToInt(se -> se.getCurrentStock()).sum());
 			} else {
 				return Long.valueOf(stockEntries.stream().mapToInt(se -> se.getCurrentStock()).sum());
