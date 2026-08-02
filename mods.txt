@@ -1,0 +1,11 @@
+elexis-3-base
+
+Absender auf Rechnung:
+
+git cherry-pick 776edd95d594a7fc066354c610e784bd1ec3501b
+
+
+
+
+
+
