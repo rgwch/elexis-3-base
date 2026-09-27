@@ -23,6 +23,8 @@ import ch.elexis.base.ch.arzttarife.pandemie.PandemiePackage;
 import ch.elexis.base.ch.arzttarife.pandemie.impl.PandemiePackageImpl;
 import ch.elexis.base.ch.arzttarife.physio.PhysioPackage;
 import ch.elexis.base.ch.arzttarife.physio.impl.PhysioPackageImpl;
+import ch.elexis.base.ch.arzttarife.ps25.Ps25Package;
+import ch.elexis.base.ch.arzttarife.ps25.impl.Ps25PackageImpl;
 import ch.elexis.base.ch.arzttarife.psycho.PsychoPackage;
 import ch.elexis.base.ch.arzttarife.psycho.impl.PsychoPackageImpl;
 import ch.elexis.base.ch.arzttarife.rfe.RfePackage;
@@ -128,6 +130,8 @@ public class AmbulatoryPackageImpl extends EPackageImpl implements AmbulatoryPac
 		OccupationalPackageImpl theOccupationalPackage = (OccupationalPackageImpl)(registeredPackage instanceof OccupationalPackageImpl ? registeredPackage : OccupationalPackage.eINSTANCE);
 		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(TardocPackage.eNS_URI);
 		TardocPackageImpl theTardocPackage = (TardocPackageImpl)(registeredPackage instanceof TardocPackageImpl ? registeredPackage : TardocPackage.eINSTANCE);
+		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(Ps25Package.eNS_URI);
+		Ps25PackageImpl thePs25Package = (Ps25PackageImpl)(registeredPackage instanceof Ps25PackageImpl ? registeredPackage : Ps25Package.eINSTANCE);
 
 		// Create package meta-data objects
 		theAmbulatoryPackage.createPackageContents();
@@ -141,6 +145,7 @@ public class AmbulatoryPackageImpl extends EPackageImpl implements AmbulatoryPac
 		thePsychoPackage.createPackageContents();
 		theOccupationalPackage.createPackageContents();
 		theTardocPackage.createPackageContents();
+		thePs25Package.createPackageContents();
 
 		// Initialize created meta-data
 		theAmbulatoryPackage.initializePackageContents();
@@ -154,6 +159,7 @@ public class AmbulatoryPackageImpl extends EPackageImpl implements AmbulatoryPac
 		thePsychoPackage.initializePackageContents();
 		theOccupationalPackage.initializePackageContents();
 		theTardocPackage.initializePackageContents();
+		thePs25Package.initializePackageContents();
 
 		// Mark meta-data to indicate it can't be changed
 		theAmbulatoryPackage.freeze();

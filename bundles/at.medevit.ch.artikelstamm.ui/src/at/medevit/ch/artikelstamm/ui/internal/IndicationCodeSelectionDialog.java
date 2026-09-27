@@ -6,8 +6,11 @@ import java.util.Optional;
 import java.util.StringJoiner;
 
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.TitleAreaDialog;
+import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.nebula.widgets.nattable.data.IColumnAccessor;
 import org.eclipse.nebula.widgets.nattable.data.ListDataProvider;
@@ -32,6 +35,8 @@ public class IndicationCodeSelectionDialog extends TitleAreaDialog {
 
 	private String selectedCode;
 
+	private String extendedTextCode;
+
 	public IndicationCodeSelectionDialog(IArtikelstammItem item, Shell parentShell) {
 		super(parentShell);
 		this.item = item;
@@ -52,7 +57,7 @@ public class IndicationCodeSelectionDialog extends TitleAreaDialog {
 		input = new ArrayList<>(item.getIndicationInfo().get().getIndications());
 		natTableWrapper = NatTableFactory.createSingleColumnTable(ret,
 				new ListDataProvider<ArticleIndication>(input, new IColumnAccessor<ArticleIndication>() {
-					
+
 					@Override
 					public int getColumnCount() {
 						return 1;
@@ -63,8 +68,14 @@ public class IndicationCodeSelectionDialog extends TitleAreaDialog {
 						if (element instanceof ArticleIndication) {
 							ArticleIndication indication = element;
 							StringJoiner sj = new StringJoiner("\n");
-							sj.add("<strong>" + indication.getCode() + "</strong><br/>");
-							sj.add(indication.getLimText());
+							sj.add("<strong>Code: " + indication.getCode() + "</strong><br/>");
+							if (indication.getCode().equals(extendedTextCode)) {
+								sj.add(indication.getLimText());
+							} else {
+								if (indication.getLimText().length() > 200) {
+									sj.add(StringUtils.abbreviate(indication.getLimText(), 200));
+								}
+							}
 							return sj.toString();
 						}
 						return "";
@@ -76,12 +87,41 @@ public class IndicationCodeSelectionDialog extends TitleAreaDialog {
 
 					}
 				}), null);
+		natTableWrapper.addSelectionChangedListener(new ISelectionChangedListener() {
+
+			@Override
+			public void selectionChanged(SelectionChangedEvent event) {
+				extendedTextCode = getSelectedCode();
+				updateOkButton();
+			}
+		});
 		GridData gd = new GridData(SWT.FILL, SWT.FILL, true, true);
-		gd.widthHint= 800;
+		gd.widthHint = 800;
 		gd.heightHint = 600;
 		natTableWrapper.getNatTable().setLayoutData(gd);
 		updateSelection();
 		return ret;
+	}
+
+	@Override
+	protected void createButtonsForButtonBar(Composite parent) {
+		createButton(parent, IDialogConstants.CLIENT_ID, "Kein passender Indikationscode vorhanden", true);
+		createButton(parent, IDialogConstants.OK_ID, IDialogConstants.OK_LABEL, true);
+		updateOkButton();
+	}
+
+	private void updateOkButton() {
+		if (getButton(IDialogConstants.OK_ID) != null && !getButton(IDialogConstants.OK_ID).isDisposed()) {
+			getButton(IDialogConstants.OK_ID).setEnabled(getSelectedCode() != null);
+		}
+	}
+
+	@Override
+	protected void buttonPressed(int buttonId) {
+		if (buttonId == IDialogConstants.CLIENT_ID) {
+			cancelPressed();
+		}
+		super.buttonPressed(buttonId);
 	}
 
 	private void updateSelection() {

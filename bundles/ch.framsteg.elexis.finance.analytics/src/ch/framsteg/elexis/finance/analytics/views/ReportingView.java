@@ -45,10 +45,6 @@ public class ReportingView extends ViewPart implements IRefreshable {
 	private int insertMark = -1;
 	private TabFolder tabFolder;
 
-	public ReportingView() {
-		super();
-	}
-
 	private void loadProperties() {
 		try {
 			setApplicationProperties(new Properties());
@@ -116,6 +112,7 @@ public class ReportingView extends ViewPart implements IRefreshable {
 
 	@Override
 	public void setFocus() {
+		// nothing to do
 	}
 
 	public Properties getApplicationProperties() {
